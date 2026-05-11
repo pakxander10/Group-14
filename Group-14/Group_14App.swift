@@ -9,9 +9,20 @@ import SwiftUI
 
 @main
 struct Group_14App: App {
+    @AppStorage("learnerId") private var learnerId: String = ""
+
     var body: some Scene {
         WindowGroup {
             MainTabView()
+                .sheet(isPresented: Binding(
+                    get: { learnerId.isEmpty },
+                    set: { _ in }
+                )) {
+                    LearnerProfileCreationView { created in
+                        learnerId = created.id
+                    }
+                    .interactiveDismissDisabled(true)
+                }
         }
     }
 }

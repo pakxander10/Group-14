@@ -4,6 +4,8 @@ Run: uvicorn main:app --reload
 Base URL: http://127.0.0.1:8000
 """
 
+import uuid
+
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -31,6 +33,29 @@ class LearnerProfile(BaseModel):
     interest: str            # "financial" | "tech"
     goal: str                # e.g. "investing", "career", "budgeting"
     confidence_score: int = 100
+
+    # Optional onboarding fields (collected on first launch)
+    profile_picture: Optional[bytes] = None
+    type_of_school: Optional[str] = None
+    graduation_year: Optional[int] = None
+    gender: Optional[str] = None
+    occupation_major: Optional[str] = None
+
+
+class CreateLearnerRequest(BaseModel):
+    name: str
+    profile_picture: Optional[bytes] = None
+    type_of_school: str
+    graduation_year: int
+    gender: str
+    occupation_major: str
+    current_confidence_score: int
+    # Filled later via questionnaire; defaulted here so onboarding can
+    # complete before the questionnaire step.
+    age: int = 0
+    background: str = "general"
+    interest: str = "financial"
+    goal: str = "career"
 
 
 class MentorProfile(BaseModel):
@@ -236,4 +261,27 @@ def get_profile(user_id: str):
     learner = MOCK_LEARNERS.get(user_id)
     if not learner:
         raise HTTPException(status_code=404, detail=f"User '{user_id}' not found.")
+    return learner
+
+
+# ── POST /learners ────────────────────────────────────────────
+@app.post("/learners", response_model=LearnerProfile, status_code=201)
+def create_learner(body: CreateLearnerRequest):
+    """Creates a new learner from onboarding-form data. ID is server-generated."""
+    new_id = f"u{uuid.uuid4().hex[:6]}"
+    learner = LearnerProfile(
+        id=new_id,
+        name=body.name,
+        age=body.age,
+        background=body.background,
+        interest=body.interest,
+        goal=body.goal,
+        confidence_score=max(1, min(1000, body.current_confidence_score)),
+        profile_picture=body.profile_picture,
+        type_of_school=body.type_of_school,
+        graduation_year=body.graduation_year,
+        gender=body.gender,
+        occupation_major=body.occupation_major,
+    )
+    MOCK_LEARNERS[new_id] = learner
     return learner
