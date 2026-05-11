@@ -6,7 +6,7 @@
 //
 
 import Foundation
-import Combine
+internal import Combine
 
 // MARK: - ConfidenceServiceProtocol
 
@@ -45,15 +45,17 @@ final class ConfidenceViewModel: ObservableObject {
     private let service: ConfidenceServiceProtocol
     let userId: String
 
-    init(userId: String = "u1", service: ConfidenceServiceProtocol = ConfidenceService()) {
-        self.userId = userId
-        self.service = service
-    }
+
 
     // MARK: Computed
 
     var normalizedFraction: Double { Double(score) / 1000.0 }
-
+    
+    init(userId: String = "u1", service: ConfidenceServiceProtocol? = nil) {
+        self.userId = userId
+        self.service = service ?? ConfidenceService()
+    }
+    
     // MARK: Intents
 
     /// Call on view appear to animate in the score
