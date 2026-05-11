@@ -8,7 +8,6 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Optional
-import uuid
 
 app = FastAPI(title="Ascend API", version="1.0.0")
 
