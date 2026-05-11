@@ -80,7 +80,6 @@ struct MentorProfileView: View {
                     VStack(alignment: .leading, spacing: 16) {
                         InfoRow(label: "Title", value: mentor.title)
                         InfoRow(label: "Company", value: mentor.company)
-                        InfoRow(label: "Track", value: mentor.track)
                         InfoRow(label: "Experience", value: "\(mentor.yearsExperience) years")
 
                         if let email = mentor.email, !email.isEmpty {

@@ -43,6 +43,10 @@ class MentorProfile(BaseModel):
     expertise: list[str]
     years_experience: int
     avatar_initials: str
+    email: Optional[str] = None
+    linked_in_url: Optional[str] = None
+    education_history: Optional[list[str]] = None
+    profile_picture: Optional[bytes] = None
 
 
 class ThreadReply(BaseModel):
@@ -88,6 +92,9 @@ MOCK_MENTORS: dict[str, MentorProfile] = {
         expertise=["Index Investing", "Roth IRA", "Budgeting", "Debt Payoff"],
         years_experience=10,
         avatar_initials="PS",
+        email="priya.sharma@fidelity.com",
+        linked_in_url="linkedin.com/in/priyasharma",
+        education_history=["MBA Finance, NYU Stern", "BS Economics, UCLA"],
     ),
     "m2": MentorProfile(
         id="m2",
@@ -98,6 +105,9 @@ MOCK_MENTORS: dict[str, MentorProfile] = {
         expertise=["Python", "System Design", "Interview Prep", "Networking"],
         years_experience=5,
         avatar_initials="JL",
+        email="jordan.lee@fidelity.com",
+        linked_in_url="linkedin.com/in/jordanlee",
+        education_history=["BA English, UNC Chapel Hill"],
     ),
     "m3": MentorProfile(
         id="m3",
@@ -108,6 +118,9 @@ MOCK_MENTORS: dict[str, MentorProfile] = {
         expertise=["Emergency Fund", "Stock Market Basics", "401k", "Credit Score"],
         years_experience=7,
         avatar_initials="AO",
+        email="amara.okafor@fidelity.com",
+        linked_in_url="linkedin.com/in/amaraokafor",
+        education_history=["BS Finance, Spelman College"],
     ),
 }
 
