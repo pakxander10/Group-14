@@ -6,6 +6,7 @@
 //
 
 import Foundation
+internal import Combine
 
 // MARK: - MentorThreadServiceProtocol
 
@@ -38,8 +39,8 @@ final class MentorThreadViewModel: ObservableObject {
 
     private let service: MentorThreadServiceProtocol
 
-    init(service: MentorThreadServiceProtocol = MentorThreadService()) {
-        self.service = service
+    init(service: MentorThreadServiceProtocol? = nil) {
+        self.service = service ?? MentorThreadService()
     }
 
     // MARK: Intents

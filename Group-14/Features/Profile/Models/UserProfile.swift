@@ -29,13 +29,17 @@ struct LearnerProfile: Codable, Identifiable {
 // MARK: - MentorProfile
 
 struct MentorProfile: Codable, Identifiable {
-    let id: String
-    let name: String
-    let title: String
-    let company: String
-    let track: String           // "Financial" | "Tech"
-    let bio: String
-    let expertise: [String]
-    let yearsExperience: Int
-    let avatarInitials: String
+    var id: String
+    var name: String
+    var title: String
+    var company: String
+    var track: String           // "Financial" | "Tech"
+    var bio: String
+    var expertise: [String]
+    var yearsExperience: Int
+    var avatarInitials: String
+    var email: String?
+    var linkedInUrl: String?
+    var educationHistory: [String]?
+    var profilePicture: Data?
 }
