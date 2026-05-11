@@ -50,8 +50,8 @@ final class ProfileViewModel: ObservableObject {
     // MARK: Dependencies (injected for testability)
     private let service: ProfileServiceProtocol
 
-    init(service: ProfileServiceProtocol = ProfileService()) {
-        self.service = service
+    init(service: ProfileServiceProtocol? = nil) {
+        self.service = service ?? ProfileService()
     }
 
     // MARK: Intents

@@ -74,8 +74,8 @@ final class QuestionnaireViewModel: ObservableObject {
     // MARK: Dependencies
     private let service: QuestionnaireServiceProtocol
 
-    init(service: QuestionnaireServiceProtocol = QuestionnaireService()) {
-        self.service = service
+    init(service: QuestionnaireServiceProtocol? = nil) {
+        self.service = service ?? QuestionnaireService()
     }
 
     // MARK: Intents
