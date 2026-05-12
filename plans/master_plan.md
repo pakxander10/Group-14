@@ -3,7 +3,7 @@
 > High-level roadmap for the Group-14 iOS app. Each entry links to a detailed feature plan.
 
 **Last updated:** 2026-05-11
-**Active feature:** `feature_finance_readiness_ladder.md`
+**Active feature:** `feature_mentor_match.md`
 
 ---
 
@@ -45,7 +45,8 @@ Backend is a small FastAPI service with in-memory mock data ([backend/main.py](.
 | Learner Profile Creation (onboarding) | [feature_learner_profile_creation.md](feature_learner_profile_creation.md) | ✅ Done |
 | Welcome / Login / Mentor signup | — | ✅ Done (PR #4) |
 | Q Thread posting + replies + Inbox + score trigger | [feature_thread_inbox.md](feature_thread_inbox.md) | ✅ Done (PR #5) |
-| **Finance-Exclusive Readiness Ladder** | [feature_finance_readiness_ladder.md](feature_finance_readiness_ladder.md) | 🟡 **Active** |
+| Finance-Exclusive Readiness Ladder | [feature_finance_readiness_ladder.md](feature_finance_readiness_ladder.md) | ✅ Done (PR #6) |
+| **Mentor Match (replaces Questionnaire flow)** | [feature_mentor_match.md](feature_mentor_match.md) | 🟡 **Active** |
 
 ---
 
