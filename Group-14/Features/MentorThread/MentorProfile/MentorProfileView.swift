@@ -271,5 +271,4 @@ private struct EditField: View {
     NavigationStack {
         MentorProfileView()
     }
-    .preferredColorScheme(.dark)
 }

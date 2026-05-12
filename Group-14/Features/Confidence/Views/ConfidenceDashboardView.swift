@@ -356,5 +356,4 @@ struct ConfidenceDashboardView: View {
 
 #Preview {
     ConfidenceDashboardView()
-        .preferredColorScheme(.dark)
 }

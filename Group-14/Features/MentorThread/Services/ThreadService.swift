@@ -18,7 +18,12 @@ protocol ThreadServiceProtocol {
     func createPost(_ request: CreatePostRequest) async throws -> ThreadPost
     func createReply(_ request: CreateReplyRequest) async throws -> ThreadReply
     func fetchInbox(learnerId: String) async throws -> [InboxNotification]
+    func upvotePost(id: String) async throws -> ThreadPost
+    func upvoteReply(postId: String, replyId: String) async throws -> ThreadReply
 }
+
+/// Empty body for POST endpoints that expect no payload (e.g. upvote actions).
+struct EmptyBody: Encodable, Equatable {}
 
 // MARK: - ThreadService (concrete)
 
@@ -43,5 +48,13 @@ final class ThreadService: ThreadServiceProtocol {
 
     func fetchInbox(learnerId: String) async throws -> [InboxNotification] {
         try await network.get("/inbox/\(learnerId)")
+    }
+
+    func upvotePost(id: String) async throws -> ThreadPost {
+        try await network.post("/posts/\(id)/upvote", body: EmptyBody())
+    }
+
+    func upvoteReply(postId: String, replyId: String) async throws -> ThreadReply {
+        try await network.post("/posts/\(postId)/replies/\(replyId)/upvote", body: EmptyBody())
     }
 }

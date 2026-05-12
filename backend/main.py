@@ -1,5 +1,5 @@
 """
-Ascend — FastAPI Backend
+InvestInMe — FastAPI Backend
 Run: uvicorn main:app --reload
 Base URL: http://127.0.0.1:8000
 """
@@ -12,7 +12,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Optional
 
-app = FastAPI(title="Ascend API", version="1.0.0")
+app = FastAPI(title="InvestInMe API", version="1.0.0")
 
 # ─── CORS (allow iOS simulator / local dev) ──────────────────────────────────
 app.add_middleware(
@@ -340,7 +340,7 @@ def _is_financial_learner(learner: LearnerProfile) -> bool:
 
 @app.get("/")
 def root():
-    return {"message": "Ascend API is running 🚀"}
+    return {"message": "InvestInMe API is running 🚀"}
 
 
 # ── GET /feed ─────────────────────────────────────────────────
@@ -489,6 +489,34 @@ def upvote_reply(body: UpvoteRequest):
     if voter is not None and _is_financial_learner(voter) and post.category == "Financial":
         _bump_score(voter, UPVOTE_BONUS)
 
+    return reply
+
+
+# ── POST /posts/{post_id}/upvote ──────────────────────────────
+@app.post("/posts/{post_id}/upvote", response_model=ThreadPost)
+def upvote_post(post_id: str):
+    """Increment a post's upvote count and return the updated post."""
+    post = MOCK_THREAD_POSTS.get(post_id)
+    if not post:
+        raise HTTPException(status_code=404, detail=f"Post '{post_id}' not found.")
+    post.upvotes += 1
+    return post
+
+
+# ── POST /posts/{post_id}/replies/{reply_id}/upvote ───────────
+@app.post("/posts/{post_id}/replies/{reply_id}/upvote", response_model=ThreadReply)
+def upvote_reply_on_post(post_id: str, reply_id: str):
+    """Increment a reply's upvote count and return the updated reply."""
+    post = MOCK_THREAD_POSTS.get(post_id)
+    if not post:
+        raise HTTPException(status_code=404, detail=f"Post '{post_id}' not found.")
+    reply = next((r for r in post.replies if r.id == reply_id), None)
+    if reply is None:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Reply '{reply_id}' not found on post '{post_id}'.",
+        )
+    reply.upvotes += 1
     return reply
 
 

@@ -383,5 +383,4 @@ struct CareerMatchView: View {
     NavigationStack {
         CareerMatchView()
     }
-    .preferredColorScheme(.dark)
 }

@@ -60,7 +60,9 @@ struct ThreadFeedView: View {
                 NavigationLink {
                     ThreadDetailView(post: post, viewModel: viewModel)
                 } label: {
-                    PostRow(post: post)
+                    PostRow(post: post) {
+                        viewModel.upvotePost(id: post.id)
+                    }
                 }
                 .listRowInsets(.init(top: 8, leading: 16, bottom: 8, trailing: 16))
             }
@@ -90,6 +92,7 @@ struct ThreadFeedView: View {
 
 private struct PostRow: View {
     let post: ThreadPost
+    let onUpvote: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -111,16 +114,39 @@ private struct PostRow: View {
                 .foregroundStyle(.secondary)
                 .lineLimit(3)
 
-            HStack(spacing: 6) {
-                Image(systemName: "person.circle.fill")
-                    .foregroundStyle(.secondary)
-                Text(post.authorName)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+            HStack(spacing: 12) {
+                HStack(spacing: 6) {
+                    Image(systemName: "person.circle.fill")
+                        .foregroundStyle(.secondary)
+                    Text(post.authorName)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                Spacer()
+                UpvoteButton(count: post.upvotes, action: onUpvote)
             }
             .padding(.top, 2)
         }
         .padding(.vertical, 6)
+    }
+}
+
+// MARK: - UpvoteButton
+
+/// Reusable upvote control. `.buttonStyle(.borderless)` lets it live inside a
+/// NavigationLink row without consuming the row's tap target.
+struct UpvoteButton: View {
+    let count: Int
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Label("\(count)", systemImage: "arrow.up.circle")
+                .font(.caption.weight(.semibold))
+                .labelStyle(.titleAndIcon)
+        }
+        .buttonStyle(.borderless)
+        .foregroundStyle(.tint)
     }
 }
 
@@ -134,8 +160,8 @@ struct CategoryBadge: View {
             .font(.caption.weight(.semibold))
             .padding(.horizontal, 10)
             .padding(.vertical, 4)
-            .background(.tint.opacity(0.15), in: Capsule())
-            .foregroundStyle(.tint)
+            .background(backgroundColor, in: Capsule())
+            .foregroundStyle(foregroundColor)
     }
 
     private var icon: String {
@@ -143,6 +169,22 @@ struct CategoryBadge: View {
         case ThreadCategory.tech.rawValue:      return "laptopcomputer"
         case ThreadCategory.financial.rawValue: return "dollarsign.circle"
         default:                                return "tag"
+        }
+    }
+
+    private var foregroundColor: Color {
+        switch category {
+        case ThreadCategory.tech.rawValue:      return .trackTech
+        case ThreadCategory.financial.rawValue: return .trackFinancial
+        default:                                return .investAccent
+        }
+    }
+
+    private var backgroundColor: Color {
+        switch category {
+        case ThreadCategory.tech.rawValue:      return .trackTechBg
+        case ThreadCategory.financial.rawValue: return .trackFinancialBg
+        default:                                return .investHeroBand
         }
     }
 }

@@ -43,8 +43,7 @@ struct MainTabView: View {
                     }
             }
         }
-        .tint(.ascendAccent)
-        .preferredColorScheme(.dark)
+        .tint(.investPrimary)
     }
 }
 

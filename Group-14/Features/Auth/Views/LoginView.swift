@@ -40,7 +40,6 @@ struct LoginView: View {
         }
         .navigationTitle("Log In")
         .navigationBarTitleDisplayMode(.inline)
-        .preferredColorScheme(.dark)
         .onChange(of: viewModel.state) { _, newValue in
             if case .loggedIn(let role, let id) = newValue {
                 userId = id
@@ -126,5 +125,4 @@ struct LoginView: View {
 
 #Preview {
     NavigationStack { LoginView() }
-        .preferredColorScheme(.dark)
 }

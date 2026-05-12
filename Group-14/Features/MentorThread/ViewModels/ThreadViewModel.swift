@@ -125,4 +125,59 @@ final class ThreadViewModel: ObservableObject {
         newPostCategory = .financial
         postErrorMessage = nil
     }
+
+    // MARK: - Upvoting
+
+    /// Increment the upvote count on a post the user can currently see. If the id
+    /// is unknown to this VM, skip the service call entirely so the action is
+    /// a safe no-op (the upvote button only renders against `posts`, so this is
+    /// a defensive check, not an expected path).
+    func upvotePost(id: String) {
+        guard posts.contains(where: { $0.id == id }) else { return }
+
+        Task {
+            do {
+                let updated = try await service.upvotePost(id: id)
+                if let index = posts.firstIndex(where: { $0.id == id }) {
+                    posts[index] = updated
+                }
+            } catch {
+                errorMessage = error.localizedDescription
+            }
+        }
+    }
+
+    /// Increment the upvote count on a reply nested inside `postId`. If either
+    /// the post or the reply is unknown to this VM, skip the service call.
+    func upvoteReply(postId: String, replyId: String) {
+        guard let post = posts.first(where: { $0.id == postId }),
+              post.replies.contains(where: { $0.id == replyId })
+        else { return }
+
+        Task {
+            do {
+                let updatedReply = try await service.upvoteReply(postId: postId, replyId: replyId)
+                guard let postIndex = posts.firstIndex(where: { $0.id == postId }),
+                      let replyIndex = posts[postIndex].replies.firstIndex(where: { $0.id == replyId })
+                else { return }
+
+                let post = posts[postIndex]
+                var replies = post.replies
+                replies[replyIndex] = updatedReply
+                posts[postIndex] = ThreadPost(
+                    id: post.id,
+                    authorId: post.authorId,
+                    authorName: post.authorName,
+                    authorRole: post.authorRole,
+                    category: post.category,
+                    title: post.title,
+                    body: post.body,
+                    upvotes: post.upvotes,
+                    replies: replies
+                )
+            } catch {
+                errorMessage = error.localizedDescription
+            }
+        }
+    }
 }

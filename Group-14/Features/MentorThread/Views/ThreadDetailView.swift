@@ -63,6 +63,10 @@ struct ThreadDetailView: View {
                 Text("· Learner")
                     .font(.caption)
                     .foregroundStyle(.secondary)
+                Spacer()
+                UpvoteButton(count: currentPost.upvotes) {
+                    viewModel.upvotePost(id: currentPost.id)
+                }
             }
 
             Text(currentPost.body)
@@ -83,7 +87,9 @@ struct ThreadDetailView: View {
                 emptyRepliesPlaceholder
             } else {
                 ForEach(currentPost.replies) { reply in
-                    ReplyCard(reply: reply)
+                    ReplyCard(reply: reply) {
+                        viewModel.upvoteReply(postId: currentPost.id, replyId: reply.id)
+                    }
                 }
             }
         }
@@ -156,6 +162,7 @@ struct ThreadDetailView: View {
 
 private struct ReplyCard: View {
     let reply: ThreadReply
+    let onUpvote: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -177,6 +184,7 @@ private struct ReplyCard: View {
                         .foregroundStyle(.tint)
                 }
                 Spacer()
+                UpvoteButton(count: reply.upvotes, action: onUpvote)
             }
             Text(reply.body)
                 .font(.subheadline)

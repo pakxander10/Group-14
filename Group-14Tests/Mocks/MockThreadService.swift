@@ -27,6 +27,11 @@ final class MockThreadService: ThreadServiceProtocol {
 
     var throwOnNext: Error?
 
+    /// Audit trail for upvote intents — tests assert on these to confirm
+    /// the ViewModel actually reaches the service (or correctly skips it).
+    private(set) var upvotedPostIds: [String] = []
+    private(set) var upvotedReplyIds: [(postId: String, replyId: String)] = []
+
     // Scoring constants — mirror the backend's planned constants exactly.
     static let mentorReplyConfidenceBoost = 10
     static let firstFinancePostBonus     = 25
@@ -175,5 +180,62 @@ final class MockThreadService: ThreadServiceProtocol {
     func fetchInbox(learnerId: String) async throws -> [InboxNotification] {
         if let err = throwOnNext { throwOnNext = nil; throw err }
         return (notifications[learnerId] ?? []).sorted { $0.createdAt > $1.createdAt }
+    }
+
+    func upvotePost(id: String) async throws -> ThreadPost {
+        if let err = throwOnNext { throwOnNext = nil; throw err }
+        guard let existing = posts[id] else {
+            throw NSError(domain: "MockThreadService", code: 404,
+                          userInfo: [NSLocalizedDescriptionKey: "Post not found"])
+        }
+        let updated = ThreadPost(
+            id: existing.id,
+            authorId: existing.authorId,
+            authorName: existing.authorName,
+            authorRole: existing.authorRole,
+            category: existing.category,
+            title: existing.title,
+            body: existing.body,
+            upvotes: existing.upvotes + 1,
+            replies: existing.replies
+        )
+        posts[id] = updated
+        upvotedPostIds.append(id)
+        return updated
+    }
+
+    func upvoteReply(postId: String, replyId: String) async throws -> ThreadReply {
+        if let err = throwOnNext { throwOnNext = nil; throw err }
+        guard let post = posts[postId],
+              let replyIndex = post.replies.firstIndex(where: { $0.id == replyId })
+        else {
+            throw NSError(domain: "MockThreadService", code: 404,
+                          userInfo: [NSLocalizedDescriptionKey: "Reply not found"])
+        }
+        let oldReply = post.replies[replyIndex]
+        let newReply = ThreadReply(
+            id: oldReply.id,
+            postId: oldReply.postId,
+            authorId: oldReply.authorId,
+            authorName: oldReply.authorName,
+            authorRole: oldReply.authorRole,
+            body: oldReply.body,
+            upvotes: oldReply.upvotes + 1
+        )
+        var replies = post.replies
+        replies[replyIndex] = newReply
+        posts[postId] = ThreadPost(
+            id: post.id,
+            authorId: post.authorId,
+            authorName: post.authorName,
+            authorRole: post.authorRole,
+            category: post.category,
+            title: post.title,
+            body: post.body,
+            upvotes: post.upvotes,
+            replies: replies
+        )
+        upvotedReplyIds.append((postId, replyId))
+        return newReply
     }
 }

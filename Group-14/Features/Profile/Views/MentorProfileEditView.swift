@@ -56,7 +56,6 @@ struct MentorProfileEditView: View {
                 if dismissed { dismiss() }
             }
         }
-        .preferredColorScheme(.dark)
     }
 
     // MARK: - Sections

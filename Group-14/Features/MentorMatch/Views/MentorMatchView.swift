@@ -101,5 +101,4 @@ private struct TrackCard: View {
 
 #Preview {
     MentorMatchView()
-        .preferredColorScheme(.dark)
 }

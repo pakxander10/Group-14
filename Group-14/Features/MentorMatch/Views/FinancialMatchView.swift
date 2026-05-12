@@ -404,5 +404,4 @@ struct FinancialMatchView: View {
     NavigationStack {
         FinancialMatchView()
     }
-    .preferredColorScheme(.dark)
 }

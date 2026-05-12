@@ -48,7 +48,6 @@ struct MentorProfileCreationView: View {
         }
         .navigationTitle("Become a Mentor")
         .navigationBarTitleDisplayMode(.inline)
-        .preferredColorScheme(.dark)
         .onChange(of: pickerItem) { loadPickedPhoto() }
         .onChange(of: viewModel.state) { _, newValue in
             if case .created(let mentor) = newValue {
@@ -239,5 +238,4 @@ struct MentorProfileCreationView: View {
 
 #Preview {
     NavigationStack { MentorProfileCreationView() }
-        .preferredColorScheme(.dark)
 }

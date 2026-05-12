@@ -114,7 +114,7 @@ struct ProfileView: View {
         }
         .padding(.top, 8)
         .confirmationDialog(
-            "Sign out of Ascend?",
+            "Sign out of InvestInMe?",
             isPresented: $showingSignOutConfirmation,
             titleVisibility: .visible
         ) {
@@ -162,7 +162,7 @@ struct ProfileView: View {
                     .font(.title2.bold())
                     .foregroundColor(.ascendTextPrimary)
 
-                Text("Learner · Ascend Member")
+                Text("Learner · InvestInMe Member")
                     .font(.subheadline)
                     .foregroundColor(.ascendTextSecondary)
             }
@@ -171,8 +171,8 @@ struct ProfileView: View {
                 .font(.caption.bold())
                 .padding(.horizontal, 14)
                 .padding(.vertical, 6)
-                .background(Color.ascendPrimary.opacity(0.25))
-                .foregroundColor(.ascendAccent)
+                .background(Color.investHeroBand)
+                .foregroundStyle(Color.investAccent)
                 .clipShape(Capsule())
         }
         .frame(maxWidth: .infinity)
@@ -234,19 +234,19 @@ struct ProfileView: View {
                     .font(.title2.bold())
                     .foregroundColor(.ascendTextPrimary)
 
-                Text(viewModel.mentor.map { "\($0.title) · \($0.company)" } ?? "Mentor · Ascend")
+                Text(viewModel.mentor.map { "\($0.title) · \($0.company)" } ?? "Mentor · InvestInMe")
                     .font(.subheadline)
                     .foregroundColor(.ascendTextSecondary)
                     .multilineTextAlignment(.center)
             }
 
             if let track = viewModel.mentor?.track {
-                Label(track, systemImage: "sparkles")
+                Label(track, systemImage: track == "Tech" ? "laptopcomputer" : "dollarsign.circle")
                     .font(.caption.bold())
                     .padding(.horizontal, 14)
                     .padding(.vertical, 6)
-                    .background(Color.ascendPrimary.opacity(0.25))
-                    .foregroundColor(.ascendAccent)
+                    .background(track == "Tech" ? Color.trackTechBg : Color.trackFinancialBg)
+                    .foregroundStyle(track == "Tech" ? Color.trackTech : Color.trackFinancial)
                     .clipShape(Capsule())
             }
         }
@@ -355,5 +355,4 @@ private extension String {
 
 #Preview {
     ProfileView()
-        .preferredColorScheme(.dark)
 }

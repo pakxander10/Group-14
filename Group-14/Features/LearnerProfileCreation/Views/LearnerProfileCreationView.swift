@@ -50,7 +50,6 @@ struct LearnerProfileCreationView: View {
                 .padding(.vertical, 32)
             }
         }
-        .preferredColorScheme(.dark)
         .onChange(of: pickerItem) {
             loadPickedPhoto()
         }
@@ -66,7 +65,7 @@ struct LearnerProfileCreationView: View {
 
     private var header: some View {
         VStack(spacing: 6) {
-            Text("Welcome to Ascend")
+            Text("Welcome to InvestInMe")
                 .font(.title.bold())
                 .foregroundStyle(Color.ascendTextPrimary)
             Text("Tell us a little about yourself so we can match you with the right mentor.")
@@ -230,5 +229,4 @@ struct LearnerProfileCreationView: View {
 
 #Preview {
     LearnerProfileCreationView()
-        .preferredColorScheme(.dark)
 }

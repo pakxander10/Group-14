@@ -407,5 +407,4 @@ struct FlowLayout: Layout {
 
 #Preview {
     QuestionnaireView()
-        .preferredColorScheme(.dark)
 }

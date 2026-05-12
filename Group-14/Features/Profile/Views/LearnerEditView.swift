@@ -92,7 +92,6 @@ struct LearnerEditView: View {
                 if dismissed { dismiss() }
             }
         }
-        .preferredColorScheme(.dark)
     }
 
     // MARK: - Bindings
