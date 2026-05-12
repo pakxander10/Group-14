@@ -136,9 +136,14 @@ struct MentorProfileCreationView: View {
     }
 
     private var expertiseField: some View {
-        labeled("Areas of Expertise (comma-separated)") {
-            TextField("e.g. Roth IRA, Index Funds, Budgeting", text: $viewModel.expertiseInput)
-                .textFieldStyle(.roundedBorder)
+        labeled("Areas of Expertise") {
+            ExpertiseChipPickerSection(
+                selected: viewModel.selectedExpertise,
+                suggestions: viewModel.expertiseSuggestions,
+                searchQuery: $viewModel.searchQuery,
+                onAdd: { viewModel.addExpertise($0) },
+                onRemove: { viewModel.removeExpertise($0) }
+            )
         }
     }
 

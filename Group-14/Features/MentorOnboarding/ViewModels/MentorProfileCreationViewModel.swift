@@ -46,14 +46,31 @@ final class MentorProfileCreationViewModel: ObservableObject {
     @Published var company: String = "Fidelity Investments"
     @Published var track: String = ""
     @Published var bio: String = ""
-    @Published var expertiseInput: String = ""        // comma-separated
     @Published var yearsExperience: Int = 1
     @Published var email: String = ""
     @Published var linkedInUrl: String = ""
     @Published var educationHistoryInput: String = "" // one per line
     @Published var profilePicture: Data?
 
+    // Searchable multi-select expertise
+    @Published var selectedExpertise: [String] = []
+    @Published var searchQuery: String = ""
+
     @Published private(set) var state: State = .editing
+
+    /// Pool of selectable terms for the current track, minus already-selected
+    /// terms, filtered by `searchQuery` (case-insensitive substring). The
+    /// view caps the visible row count; this returns the full available list.
+    var expertiseSuggestions: [String] {
+        let pool = ExpertiseCatalog.terms(for: track)
+        let selectedLowercased = Set(selectedExpertise.map { $0.lowercased() })
+        let query = searchQuery.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+
+        let available = pool.filter { !selectedLowercased.contains($0.lowercased()) }
+        return query.isEmpty
+            ? available
+            : available.filter { $0.lowercased().contains(query) }
+    }
 
     var canSubmit: Bool {
         let trimmedName  = name.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -64,14 +81,27 @@ final class MentorProfileCreationViewModel: ObservableObject {
             && !track.isEmpty
             && !trimmedBio.isEmpty
             && yearsExperience >= 0
-            && !expertiseList.isEmpty
+            && !selectedExpertise.isEmpty
     }
 
-    private var expertiseList: [String] {
-        expertiseInput
-            .split(separator: ",")
-            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
-            .filter { !$0.isEmpty }
+    /// Adds a term to the selection only if it is part of the predetermined
+    /// catalog and not already present. No-op otherwise.
+    func addExpertise(_ term: String) {
+        let trimmed = term.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty,
+              ExpertiseCatalog.isKnown(trimmed),
+              !selectedExpertise.contains(where: { $0.lowercased() == trimmed.lowercased() })
+        else { return }
+        selectedExpertise.append(trimmed)
+        searchQuery = ""
+    }
+
+    /// Removes a term and clears the search query so the suggestion list
+    /// shows the full pool again — matches the mental model of "I changed my
+    /// mind, let me browse from scratch."
+    func removeExpertise(_ term: String) {
+        selectedExpertise.removeAll { $0.lowercased() == term.lowercased() }
+        searchQuery = ""
     }
 
     private var educationList: [String] {
@@ -103,7 +133,7 @@ final class MentorProfileCreationViewModel: ObservableObject {
             company: company.trimmingCharacters(in: .whitespacesAndNewlines),
             track: track,
             bio: bio.trimmingCharacters(in: .whitespacesAndNewlines),
-            expertise: expertiseList,
+            expertise: selectedExpertise,
             yearsExperience: yearsExperience,
             avatarInitials: initials.isEmpty ? "??" : initials,
             email: email.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty,
@@ -128,7 +158,8 @@ final class MentorProfileCreationViewModel: ObservableObject {
         company = "Fidelity Investments"
         track = ""
         bio = ""
-        expertiseInput = ""
+        selectedExpertise = []
+        searchQuery = ""
         yearsExperience = 1
         email = ""
         linkedInUrl = ""

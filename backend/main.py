@@ -95,6 +95,32 @@ class CreateMentorRequest(BaseModel):
     profile_picture: Optional[bytes] = None
 
 
+class UpdateLearnerRequest(BaseModel):
+    """PUT /profile/{user_id} body — only the fields a learner can edit
+    after onboarding. Immutable fields (age, background, confidence) are
+    deliberately omitted."""
+    name: str
+    interest: str
+    goal: str
+    occupation_major: Optional[str] = None
+
+
+class UpdateMentorRequest(BaseModel):
+    """PUT /mentors/{mentor_id} body — every field on the mentor card that
+    a mentor can change after creating the profile."""
+    name: str
+    title: str
+    company: str
+    track: str
+    bio: str
+    expertise: list[str]
+    years_experience: int
+    avatar_initials: str
+    email: Optional[str] = None
+    linked_in_url: Optional[str] = None
+    education_history: Optional[list[str]] = None
+
+
 class User(BaseModel):
     """Lightweight identity used by the threading system. Either a learner or a mentor."""
     id: str
@@ -557,6 +583,48 @@ def create_mentor(body: CreateMentorRequest):
         profile_picture=body.profile_picture,
     )
     MOCK_MENTORS[new_id] = mentor
+    return mentor
+
+
+# ── PUT /profile/{user_id} ────────────────────────────────────
+@app.put("/profile/{user_id}", response_model=LearnerProfile)
+def update_learner_profile(user_id: str, body: UpdateLearnerRequest):
+    """Applies user-editable changes to an existing learner profile.
+    Immutable fields (age, background, confidence_score) are untouched."""
+    learner = MOCK_LEARNERS.get(user_id)
+    if not learner:
+        raise HTTPException(status_code=404, detail=f"User '{user_id}' not found.")
+
+    learner.name = body.name
+    learner.interest = body.interest
+    learner.goal = body.goal
+    learner.occupation_major = body.occupation_major
+
+    MOCK_LEARNERS[user_id] = learner
+    return learner
+
+
+# ── PUT /mentors/{mentor_id} ──────────────────────────────────
+@app.put("/mentors/{mentor_id}", response_model=MentorProfile)
+def update_mentor_profile(mentor_id: str, body: UpdateMentorRequest):
+    """Applies user-editable changes to an existing mentor profile."""
+    mentor = MOCK_MENTORS.get(mentor_id)
+    if not mentor:
+        raise HTTPException(status_code=404, detail=f"Mentor '{mentor_id}' not found.")
+
+    mentor.name = body.name
+    mentor.title = body.title
+    mentor.company = body.company
+    mentor.track = body.track
+    mentor.bio = body.bio
+    mentor.expertise = body.expertise
+    mentor.years_experience = body.years_experience
+    mentor.avatar_initials = body.avatar_initials
+    mentor.email = body.email
+    mentor.linked_in_url = body.linked_in_url
+    mentor.education_history = body.education_history
+
+    MOCK_MENTORS[mentor_id] = mentor
     return mentor
 
 
