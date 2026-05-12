@@ -43,6 +43,7 @@ struct ProfileView: View {
                     viewModel.loadLearner(userId: userId)
                 }
             }
+            .overlay(alignment: .topTrailing) { editButton }
             .overlay {
                 if viewModel.isLoading {
                     ProgressView()
@@ -50,6 +51,48 @@ struct ProfileView: View {
                         .scaleEffect(1.4)
                 }
             }
+            .sheet(
+                isPresented: Binding(
+                    get: { viewModel.editingLearner != nil },
+                    set: { if !$0 { viewModel.cancelEdit() } }
+                )
+            ) {
+                LearnerEditView(viewModel: viewModel)
+            }
+            .sheet(
+                isPresented: Binding(
+                    get: { viewModel.editingMentor != nil },
+                    set: { if !$0 { viewModel.cancelEdit() } }
+                )
+            ) {
+                MentorProfileEditView(viewModel: viewModel)
+            }
+        }
+    }
+
+    // MARK: - Edit
+
+    @ViewBuilder
+    private var editButton: some View {
+        let canEdit = (isMentor && viewModel.mentor != nil)
+                    || (!isMentor && viewModel.learner != nil)
+        if canEdit {
+            Button {
+                if isMentor {
+                    viewModel.beginEditMentor()
+                } else {
+                    viewModel.beginEditLearner()
+                }
+            } label: {
+                Image(systemName: "pencil")
+                    .font(.headline)
+                    .padding(10)
+                    .background(Circle().fill(Color.ascendSurface))
+                    .foregroundColor(.ascendAccent)
+            }
+            .padding(.top, 12)
+            .padding(.trailing, 16)
+            .accessibilityLabel("Edit profile")
         }
     }
 

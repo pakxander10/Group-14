@@ -13,6 +13,8 @@ internal import Combine
 protocol ProfileServiceProtocol {
     func fetchLearner(id: String) async throws -> LearnerProfile
     func fetchMentor(id: String) async throws -> MentorProfile
+    func updateLearner(id: String, _ request: UpdateLearnerRequest) async throws -> LearnerProfile
+    func updateMentor(id: String, _ request: UpdateMentorRequest) async throws -> MentorProfile
 }
 
 // MARK: - ProfileService (concrete)
@@ -36,6 +38,14 @@ final class ProfileService: ProfileServiceProtocol {
         }
         return mentor
     }
+
+    func updateLearner(id: String, _ request: UpdateLearnerRequest) async throws -> LearnerProfile {
+        try await network.put("/profile/\(id)", body: request)
+    }
+
+    func updateMentor(id: String, _ request: UpdateMentorRequest) async throws -> MentorProfile {
+        try await network.put("/mentors/\(id)", body: request)
+    }
 }
 
 // MARK: - ProfileViewModel
@@ -48,6 +58,11 @@ final class ProfileViewModel: ObservableObject {
     @Published private(set) var isLoading = false
     @Published private(set) var errorMessage: String?
 
+    // Editing drafts. While non-nil, the corresponding edit sheet is visible.
+    @Published var editingLearner: LearnerProfile?
+    @Published var editingMentor: MentorProfile?
+    @Published private(set) var isSaving = false
+
     // MARK: Dependencies (injected for testability)
     private let service: ProfileServiceProtocol
 
@@ -55,7 +70,7 @@ final class ProfileViewModel: ObservableObject {
         self.service = service ?? ProfileService()
     }
 
-    // MARK: Intents
+    // MARK: Loading intents
 
     func loadLearner(userId: String) {
         isLoading = true
@@ -79,6 +94,80 @@ final class ProfileViewModel: ObservableObject {
             defer { isLoading = false }
             do {
                 mentor = try await service.fetchMentor(id: userId)
+            } catch {
+                errorMessage = error.localizedDescription
+            }
+        }
+    }
+
+    // MARK: Editing intents
+
+    func beginEditLearner() {
+        guard let learner else { return }
+        errorMessage = nil
+        editingLearner = learner
+    }
+
+    func beginEditMentor() {
+        guard let mentor else { return }
+        errorMessage = nil
+        editingMentor = mentor
+    }
+
+    func cancelEdit() {
+        editingLearner = nil
+        editingMentor = nil
+    }
+
+    func saveLearnerEdit() {
+        guard let draft = editingLearner else { return }
+        isSaving = true
+        errorMessage = nil
+
+        let request = UpdateLearnerRequest(
+            name: draft.name,
+            interest: draft.interest,
+            goal: draft.goal,
+            occupationMajor: draft.occupationMajor
+        )
+
+        Task {
+            defer { isSaving = false }
+            do {
+                let updated = try await service.updateLearner(id: draft.id, request)
+                learner = updated
+                editingLearner = nil
+            } catch {
+                errorMessage = error.localizedDescription
+            }
+        }
+    }
+
+    func saveMentorEdit() {
+        guard let draft = editingMentor else { return }
+        isSaving = true
+        errorMessage = nil
+
+        let request = UpdateMentorRequest(
+            name: draft.name,
+            title: draft.title,
+            company: draft.company,
+            track: draft.track,
+            bio: draft.bio,
+            expertise: draft.expertise,
+            yearsExperience: draft.yearsExperience,
+            avatarInitials: draft.avatarInitials,
+            email: draft.email,
+            linkedInUrl: draft.linkedInUrl,
+            educationHistory: draft.educationHistory
+        )
+
+        Task {
+            defer { isSaving = false }
+            do {
+                let updated = try await service.updateMentor(id: draft.id, request)
+                mentor = updated
+                editingMentor = nil
             } catch {
                 errorMessage = error.localizedDescription
             }
