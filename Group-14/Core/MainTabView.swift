@@ -3,7 +3,7 @@
 //  Group-14
 //
 //  Root tab container. Tab set is role-aware:
-//    learner → Profile, Confidence, Match, Q Thread
+//    learner → Profile, Confidence, Match, Q Thread, Inbox
 //    mentor  → Profile, Q Thread
 //
 
@@ -31,10 +31,17 @@ struct MainTabView: View {
                     }
             }
 
-            MentorThreadView()
+            ThreadFeedView()
                 .tabItem {
                     Label("Q Thread", systemImage: "bubble.left.and.bubble.right.fill")
                 }
+
+            if userRole == UserRole.learner.storageValue {
+                InboxView()
+                    .tabItem {
+                        Label("Inbox", systemImage: "tray.fill")
+                    }
+            }
         }
         .tint(.ascendAccent)
         .preferredColorScheme(.dark)
