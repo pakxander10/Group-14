@@ -13,28 +13,38 @@ struct InboxView: View {
 
     var body: some View {
         NavigationStack {
-            content
-                .navigationTitle("Inbox")
-                .navigationBarTitleDisplayMode(.large)
-                .task(id: userId) { viewModel.loadInbox(learnerId: userId) }
-                .refreshable { viewModel.loadInbox(learnerId: userId) }
+            ZStack {
+                Color.investBackground.ignoresSafeArea()
+                content
+            }
+            .navigationTitle("Inbox")
+            .navigationBarTitleDisplayMode(.large)
+            .task(id: userId) { viewModel.loadInbox(learnerId: userId) }
+            .refreshable { viewModel.loadInbox(learnerId: userId) }
         }
+        .tint(Color.investPrimary)
     }
 
     @ViewBuilder
     private var content: some View {
         if viewModel.isLoading && viewModel.notifications.isEmpty {
             ProgressView("Loading…")
+                .tint(Color.investPrimary)
         } else if let error = viewModel.errorMessage, viewModel.notifications.isEmpty {
             errorState(message: error)
         } else if viewModel.notifications.isEmpty {
             emptyState
         } else {
-            List(viewModel.notifications) { notification in
-                NotificationRow(notification: notification)
-                    .listRowInsets(.init(top: 10, leading: 16, bottom: 10, trailing: 16))
+            ScrollView {
+                LazyVStack(spacing: 12) {
+                    ForEach(viewModel.notifications) { notification in
+                        NotificationCard(notification: notification)
+                    }
+                }
+                .padding(.horizontal, 16)
+                .padding(.top, 8)
+                .padding(.bottom, 24)
             }
-            .listStyle(.insetGrouped)
         }
     }
 
@@ -42,12 +52,13 @@ struct InboxView: View {
         VStack(spacing: 12) {
             Image(systemName: "tray")
                 .font(.system(size: 44))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Color.investTextSecondary)
             Text("No notifications yet")
                 .font(.headline)
+                .foregroundStyle(Color.investTitle)
             Text("When a mentor replies to one of your questions, you'll see it here.")
                 .font(.subheadline)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Color.investTextSecondary)
                 .multilineTextAlignment(.center)
         }
         .padding(40)
@@ -57,23 +68,25 @@ struct InboxView: View {
         VStack(spacing: 12) {
             Image(systemName: "wifi.slash")
                 .font(.system(size: 40))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Color.investTextSecondary)
             Text("Couldn't load inbox")
                 .font(.headline)
+                .foregroundStyle(Color.investTitle)
             Text(message)
                 .font(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Color.investTextSecondary)
                 .multilineTextAlignment(.center)
             Button("Retry") { viewModel.loadInbox(learnerId: userId) }
                 .buttonStyle(.borderedProminent)
+                .tint(Color.investPrimary)
         }
         .padding(32)
     }
 }
 
-// MARK: - NotificationRow
+// MARK: - NotificationCard
 
-private struct NotificationRow: View {
+private struct NotificationCard: View {
     let notification: InboxNotification
 
     var body: some View {
@@ -83,35 +96,49 @@ private struct NotificationRow: View {
                 HStack(spacing: 6) {
                     Text(notification.mentorName)
                         .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(Color.investTextPrimary)
                     Text("replied to your question")
                         .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.investTextSecondary)
+                    Spacer(minLength: 0)
+                    Circle()
+                        .fill(Color.investPrimary)
+                        .frame(width: 8, height: 8)
                 }
                 Text("\u{201C}\(notification.postTitle)\u{201D}")
                     .font(.footnote.weight(.medium))
-                    .foregroundStyle(.primary)
+                    .foregroundStyle(Color.investTitle)
                     .lineLimit(2)
                 Text(notification.replyPreview)
                     .font(.footnote)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.investTextSecondary)
                     .lineLimit(3)
                 if let formatted = formattedTimestamp(notification.createdAt) {
                     Text(formatted)
                         .font(.caption2)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.investTextSecondary)
                 }
             }
         }
-        .padding(.vertical, 4)
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(Color.investSurface)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .stroke(Color.investBorder.opacity(0.6), lineWidth: 1)
+                )
+        )
     }
 
     private var avatar: some View {
         ZStack {
             Circle()
-                .fill(.tint.opacity(0.15))
-                .frame(width: 38, height: 38)
+                .fill(Color.investHeroBand)
+                .frame(width: 40, height: 40)
             Image(systemName: "checkmark.seal.fill")
-                .foregroundStyle(.tint)
+                .foregroundStyle(Color.investPrimary)
         }
     }
 

@@ -27,42 +27,47 @@ struct ThreadDetailView: View {
     }
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
-                header
-                Divider()
-                repliesSection
+        ZStack {
+            Color.investBackground.ignoresSafeArea()
 
-                if isMentor {
-                    Divider()
-                    replyComposer
+            ScrollView {
+                VStack(alignment: .leading, spacing: 16) {
+                    headerCard
+                    repliesSection
+
+                    if isMentor {
+                        replyComposerCard
+                    }
                 }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 16)
             }
-            .padding(.horizontal, 20)
-            .padding(.vertical, 16)
         }
         .navigationTitle("Question")
         .navigationBarTitleDisplayMode(.inline)
+        .tint(Color.investPrimary)
     }
 
     // MARK: - Header
 
-    private var header: some View {
+    private var headerCard: some View {
         VStack(alignment: .leading, spacing: 12) {
             CategoryBadge(category: currentPost.category)
 
             Text(currentPost.title)
                 .font(.title2.bold())
-                .foregroundStyle(.primary)
+                .foregroundStyle(Color.investTitle)
+                .fixedSize(horizontal: false, vertical: true)
 
             HStack(spacing: 8) {
                 Image(systemName: "person.circle.fill")
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.investTextSecondary)
                 Text(currentPost.authorName)
                     .font(.caption.weight(.semibold))
+                    .foregroundStyle(Color.investTextPrimary)
                 Text("· Learner")
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.investTextSecondary)
                 Spacer()
                 UpvoteButton(count: currentPost.upvotes) {
                     viewModel.upvotePost(id: currentPost.id)
@@ -71,9 +76,19 @@ struct ThreadDetailView: View {
 
             Text(currentPost.body)
                 .font(.body)
-                .foregroundStyle(.primary)
+                .foregroundStyle(Color.investTextPrimary)
                 .fixedSize(horizontal: false, vertical: true)
         }
+        .padding(18)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .fill(Color.investSurface)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                        .stroke(Color.investBorder.opacity(0.6), lineWidth: 1)
+                )
+        )
     }
 
     // MARK: - Replies
@@ -82,6 +97,8 @@ struct ThreadDetailView: View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Replies (\(currentPost.replies.count))")
                 .font(.headline)
+                .foregroundStyle(Color.investTitle)
+                .padding(.horizontal, 4)
 
             if currentPost.replies.isEmpty {
                 emptyRepliesPlaceholder
@@ -98,28 +115,43 @@ struct ThreadDetailView: View {
     private var emptyRepliesPlaceholder: some View {
         HStack(spacing: 10) {
             Image(systemName: "bubble.left")
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Color.investTextSecondary)
             Text("No replies yet.")
                 .font(.subheadline)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Color.investTextSecondary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding()
-        .background(Color(uiColor: .secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 12))
+        .padding(16)
+        .background(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .fill(Color.investSurface)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .stroke(Color.investBorder.opacity(0.6), lineWidth: 1)
+                )
+        )
     }
 
     // MARK: - Reply composer (mentors only)
 
-    private var replyComposer: some View {
-        VStack(alignment: .leading, spacing: 10) {
+    private var replyComposerCard: some View {
+        VStack(alignment: .leading, spacing: 12) {
             Text("Your reply")
                 .font(.headline)
+                .foregroundStyle(Color.investTitle)
 
             TextEditor(text: $replyDraft)
                 .frame(minHeight: 100)
-                .padding(8)
-                .background(Color(uiColor: .secondarySystemGroupedBackground),
-                            in: RoundedRectangle(cornerRadius: 12))
+                .scrollContentBackground(.hidden)
+                .padding(10)
+                .background(
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .fill(Color.investBackground)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                .stroke(Color.investBorder, lineWidth: 1)
+                        )
+                )
                 .focused($replyFieldFocused)
 
             if let error = viewModel.replyErrorMessage {
@@ -149,12 +181,23 @@ struct ThreadDetailView: View {
                     }
                 }
                 .buttonStyle(.borderedProminent)
+                .tint(Color.investPrimary)
                 .disabled(
                     replyDraft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
                     || viewModel.isSubmittingReply
                 )
             }
         }
+        .padding(18)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .fill(Color.investSurface)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                        .stroke(Color.investBorder.opacity(0.6), lineWidth: 1)
+                )
+        )
     }
 }
 
@@ -164,37 +207,43 @@ private struct ReplyCard: View {
     let reply: ThreadReply
     let onUpvote: () -> Void
 
+    private var isMentor: Bool { reply.authorRole == "mentor" }
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 8) {
-                Image(systemName: reply.authorRole == "mentor"
-                      ? "checkmark.seal.fill"
-                      : "person.circle.fill")
-                    .foregroundStyle(reply.authorRole == "mentor"
-                                     ? AnyShapeStyle(.tint)
-                                     : AnyShapeStyle(.secondary))
+                Image(systemName: isMentor ? "checkmark.seal.fill" : "person.circle.fill")
+                    .foregroundStyle(isMentor ? Color.investPrimary : Color.investTextSecondary)
                 Text(reply.authorName)
                     .font(.subheadline.weight(.semibold))
-                if reply.authorRole == "mentor" {
+                    .foregroundStyle(Color.investTextPrimary)
+                if isMentor {
                     Text("Mentor")
                         .font(.caption2.bold())
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 2)
-                        .background(.tint.opacity(0.15), in: Capsule())
-                        .foregroundStyle(.tint)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 3)
+                        .background(Color.investHeroBand, in: Capsule())
+                        .foregroundStyle(Color.investPrimary)
                 }
                 Spacer()
                 UpvoteButton(count: reply.upvotes, action: onUpvote)
             }
             Text(reply.body)
                 .font(.subheadline)
-                .foregroundStyle(.primary)
+                .foregroundStyle(Color.investTextPrimary)
                 .fixedSize(horizontal: false, vertical: true)
         }
-        .padding(14)
+        .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color(uiColor: .secondarySystemGroupedBackground),
-                    in: RoundedRectangle(cornerRadius: 12))
+        .background(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .fill(isMentor ? Color.investHeroBand.opacity(0.55) : Color.investSurface)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .stroke(isMentor ? Color.investBorder : Color.investBorder.opacity(0.6),
+                                lineWidth: 1)
+                )
+        )
     }
 }
 

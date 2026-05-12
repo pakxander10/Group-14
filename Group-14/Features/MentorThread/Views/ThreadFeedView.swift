@@ -19,26 +19,31 @@ struct ThreadFeedView: View {
 
     var body: some View {
         NavigationStack {
-            content
-                .navigationTitle("Q Thread")
-                .navigationBarTitleDisplayMode(.large)
-                .toolbar {
-                    if isLearner {
-                        ToolbarItem(placement: .topBarTrailing) {
-                            Button {
-                                isComposingPost = true
-                            } label: {
-                                Label("Ask a Question", systemImage: "plus.circle.fill")
-                            }
+            ZStack {
+                Color.investBackground.ignoresSafeArea()
+                content
+            }
+            .navigationTitle("Q Thread")
+            .navigationBarTitleDisplayMode(.large)
+            .toolbar {
+                if isLearner {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button {
+                            isComposingPost = true
+                        } label: {
+                            Label("Ask a Question", systemImage: "plus.circle.fill")
+                                .foregroundStyle(Color.investPrimary)
                         }
                     }
                 }
-                .sheet(isPresented: $isComposingPost) {
-                    ComposePostSheet(viewModel: viewModel, userId: userId)
-                }
-                .task { viewModel.loadFeed() }
-                .refreshable { viewModel.loadFeed() }
+            }
+            .sheet(isPresented: $isComposingPost) {
+                ComposePostSheet(viewModel: viewModel, userId: userId)
+            }
+            .task { viewModel.loadFeed() }
+            .refreshable { viewModel.loadFeed() }
         }
+        .tint(Color.investPrimary)
     }
 
     // MARK: - Content
@@ -47,6 +52,7 @@ struct ThreadFeedView: View {
     private var content: some View {
         if viewModel.isLoading && viewModel.posts.isEmpty {
             ProgressView("Loading…")
+                .tint(Color.investPrimary)
         } else if let error = viewModel.errorMessage, viewModel.posts.isEmpty {
             errorState(message: error)
         } else {
@@ -55,79 +61,96 @@ struct ThreadFeedView: View {
     }
 
     private var feedList: some View {
-        List {
-            ForEach(viewModel.posts) { post in
-                NavigationLink {
-                    ThreadDetailView(post: post, viewModel: viewModel)
-                } label: {
-                    PostRow(post: post) {
-                        viewModel.upvotePost(id: post.id)
+        ScrollView {
+            LazyVStack(spacing: 12) {
+                ForEach(viewModel.posts) { post in
+                    NavigationLink {
+                        ThreadDetailView(post: post, viewModel: viewModel)
+                    } label: {
+                        PostCard(post: post) {
+                            viewModel.upvotePost(id: post.id)
+                        }
                     }
+                    .buttonStyle(.plain)
                 }
-                .listRowInsets(.init(top: 8, leading: 16, bottom: 8, trailing: 16))
             }
+            .padding(.horizontal, 16)
+            .padding(.top, 8)
+            .padding(.bottom, 24)
         }
-        .listStyle(.insetGrouped)
     }
 
     private func errorState(message: String) -> some View {
         VStack(spacing: 12) {
             Image(systemName: "wifi.slash")
                 .font(.system(size: 40))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Color.investTextSecondary)
             Text("Couldn't load feed")
                 .font(.headline)
+                .foregroundStyle(Color.investTitle)
             Text(message)
                 .font(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Color.investTextSecondary)
                 .multilineTextAlignment(.center)
             Button("Retry") { viewModel.loadFeed() }
                 .buttonStyle(.borderedProminent)
+                .tint(Color.investPrimary)
         }
         .padding(32)
     }
 }
 
-// MARK: - PostRow
+// MARK: - PostCard
 
-private struct PostRow: View {
+private struct PostCard: View {
     let post: ThreadPost
     let onUpvote: () -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 8) {
                 CategoryBadge(category: post.category)
                 Spacer()
                 Label("\(post.replies.count)", systemImage: "bubble.left.fill")
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.investTextSecondary)
             }
 
             Text(post.title)
                 .font(.headline)
-                .foregroundStyle(.primary)
+                .foregroundStyle(Color.investTitle)
                 .lineLimit(2)
+                .frame(maxWidth: .infinity, alignment: .leading)
 
             Text(post.body)
                 .font(.subheadline)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Color.investTextSecondary)
                 .lineLimit(3)
+                .frame(maxWidth: .infinity, alignment: .leading)
 
             HStack(spacing: 12) {
                 HStack(spacing: 6) {
                     Image(systemName: "person.circle.fill")
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.investTextSecondary)
                     Text(post.authorName)
                         .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.investTextSecondary)
                 }
                 Spacer()
                 UpvoteButton(count: post.upvotes, action: onUpvote)
             }
             .padding(.top, 2)
         }
-        .padding(.vertical, 6)
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(Color.investSurface)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .stroke(Color.investBorder.opacity(0.6), lineWidth: 1)
+                )
+        )
     }
 }
 
@@ -141,12 +164,15 @@ struct UpvoteButton: View {
 
     var body: some View {
         Button(action: action) {
-            Label("\(count)", systemImage: "arrow.up.circle")
+            Label("\(count)", systemImage: "arrow.up.circle.fill")
                 .font(.caption.weight(.semibold))
                 .labelStyle(.titleAndIcon)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 5)
+                .background(Color.investHeroBand, in: Capsule())
+                .foregroundStyle(Color.investPrimary)
         }
         .buttonStyle(.borderless)
-        .foregroundStyle(.tint)
     }
 }
 
@@ -250,6 +276,7 @@ private struct ComposePostSheet: View {
                 }
             }
         }
+        .tint(Color.investPrimary)
     }
 }
 
