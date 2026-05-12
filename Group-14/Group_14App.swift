@@ -9,9 +9,20 @@ import SwiftUI
 
 @main
 struct Group_14App: App {
+    @AppStorage("learnerId") private var learnerId: String = ""
+
     var body: some Scene {
         WindowGroup {
-            MainTabView()
+            // Root gate: onboarding screen until the learner has an id,
+            // then the four-tab app. Signing out clears learnerId and
+            // re-presents onboarding without any sheet/cover indirection.
+            if learnerId.isEmpty {
+                LearnerProfileCreationView { created in
+                    learnerId = created.id
+                }
+            } else {
+                MainTabView()
+            }
         }
     }
 }

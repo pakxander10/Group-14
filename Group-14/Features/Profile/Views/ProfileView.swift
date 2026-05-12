@@ -7,6 +7,8 @@ import SwiftUI
 
 struct ProfileView: View {
     @StateObject private var viewModel = ProfileViewModel()
+    @AppStorage("learnerId") private var learnerId: String = ""
+    @State private var showingSignOutConfirmation = false
 
     var body: some View {
         NavigationStack {
@@ -23,6 +25,8 @@ struct ProfileView: View {
                             infoGrid(learner: learner)
                         }
 
+                        signOutButton
+
                         Spacer(minLength: 40)
                     }
                     .padding(.horizontal, 20)
@@ -31,7 +35,10 @@ struct ProfileView: View {
             }
             .navigationTitle("")
             .navigationBarHidden(true)
-            .task { viewModel.loadProfile() }
+            .task(id: learnerId) {
+                guard !learnerId.isEmpty else { return }
+                viewModel.loadProfile(userId: learnerId)
+            }
             .overlay {
                 if viewModel.isLoading {
                     ProgressView()
@@ -39,6 +46,35 @@ struct ProfileView: View {
                         .scaleEffect(1.4)
                 }
             }
+        }
+    }
+
+    private var signOutButton: some View {
+        Button(role: .destructive) {
+            showingSignOutConfirmation = true
+        } label: {
+            Label("Sign Out", systemImage: "rectangle.portrait.and.arrow.right")
+                .font(.subheadline.bold())
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 12)
+                .background(
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .fill(Color.ascendSurface)
+                )
+                .foregroundColor(.red)
+        }
+        .padding(.top, 8)
+        .confirmationDialog(
+            "Sign out of Ascend?",
+            isPresented: $showingSignOutConfirmation,
+            titleVisibility: .visible
+        ) {
+            Button("Sign Out", role: .destructive) {
+                learnerId = ""
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("You'll need to create a new profile to sign back in.")
         }
     }
 
@@ -58,14 +94,14 @@ struct ProfileView: View {
                     )
                     .frame(width: 96, height: 96)
 
-                Text(viewModel.learner?.name.initials ?? "SR")
+                Text(viewModel.learner?.name.initials ?? "—")
                     .font(.system(size: 32, weight: .bold, design: .rounded))
                     .foregroundColor(.white)
             }
             .shadow(color: .ascendPrimary.opacity(0.5), radius: 16)
 
             VStack(spacing: 4) {
-                Text(viewModel.learner?.name ?? "Sofia Rodriguez")
+                Text(viewModel.learner?.name ?? "Loading…")
                     .font(.title2.bold())
                     .foregroundColor(.ascendTextPrimary)
 

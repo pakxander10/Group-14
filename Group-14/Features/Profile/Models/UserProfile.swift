@@ -16,7 +16,7 @@ enum UserRole: String, Codable {
 
 // MARK: - LearnerProfile
 
-struct LearnerProfile: Codable, Identifiable {
+struct LearnerProfile: Codable, Identifiable, Equatable {
     let id: String
     let name: String
     let age: Int
@@ -24,6 +24,14 @@ struct LearnerProfile: Codable, Identifiable {
     let interest: String        // "financial" | "tech"
     let goal: String
     let confidenceScore: Int
+
+    // Optional onboarding fields — keep optional so existing GET /profile/{id}
+    // responses (which do not include them) continue to decode.
+    let profilePicture: Data?
+    let typeOfSchool: String?
+    let graduationYear: Int?
+    let gender: String?
+    let occupationMajor: String?
 }
 
 // MARK: - MentorProfile
