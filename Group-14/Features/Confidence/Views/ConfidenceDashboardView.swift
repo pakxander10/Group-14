@@ -2,14 +2,20 @@
 //  ConfidenceDashboardView.swift
 //  Group-14 — Features/Confidence/Views
 //
+//  Renders the Finance-Exclusive Readiness Ladder.
+//  Tech-track learners see an ineligible state — the score and tiers are
+//  exclusive to the Financial track.
+//
 
 import SwiftUI
 
 struct ConfidenceDashboardView: View {
     @StateObject private var viewModel = ConfidenceViewModel()
+    @AppStorage("userId") private var userId: String = ""
 
-    // Drive the animated ring trim
+    // Drives the ring's animated reveal on first appear.
     @State private var animatedFraction: Double = 0
+    @State private var isShowingInfoSheet = false
 
     var body: some View {
         NavigationStack {
@@ -17,29 +23,14 @@ struct ConfidenceDashboardView: View {
                 Color.ascendBackground.ignoresSafeArea()
 
                 ScrollView {
-                    VStack(spacing: 32) {
-                        // ── Page Title ────────────────────────────────────
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("Confidence Score")
-                                .font(.largeTitle.bold())
-                                .foregroundColor(.ascendTextPrimary)
-                            Text("Track your growth journey")
-                                .font(.subheadline)
-                                .foregroundColor(.ascendTextSecondary)
+                    VStack(spacing: 28) {
+                        header
+
+                        if viewModel.isEligibleForScoring {
+                            eligibleContent
+                        } else {
+                            ineligibleContent
                         }
-                        .frame(maxWidth: .infinity, alignment: .leading)
-
-                        // ── Animated Ring ─────────────────────────────────
-                        ringGauge
-
-                        // ── Tier Card ─────────────────────────────────────
-                        tierCard
-
-                        // ── Boost Button ──────────────────────────────────
-                        boostButton
-
-                        // ── Milestones ────────────────────────────────────
-                        milestonesSection
 
                         Spacer(minLength: 40)
                     }
@@ -48,26 +39,100 @@ struct ConfidenceDashboardView: View {
                 }
             }
             .navigationBarHidden(true)
-            .task {
-                // Small delay so the ring animates from 0 → score on first appear
-                try? await Task.sleep(nanoseconds: 300_000_000)
+            .task(id: userId) {
+                viewModel.load(userId: userId)
+            }
+            // Drive the ring's animated reveal off the loaded score so a slow
+            // network doesn't cause the ring to settle on the wrong value.
+            .onChange(of: viewModel.score) { _, newScore in
+                let target = Double(max(0, min(1000, newScore))) / 1000.0
                 withAnimation(.easeOut(duration: 1.2)) {
-                    animatedFraction = viewModel.normalizedFraction
+                    animatedFraction = target
                 }
             }
+            .sheet(isPresented: $isShowingInfoSheet) {
+                earningPointsSheet
+            }
         }
+    }
+
+    // MARK: - Header
+
+    private var header: some View {
+        HStack(alignment: .top) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Confidence Score")
+                    .font(.largeTitle.bold())
+                    .foregroundColor(.ascendTextPrimary)
+                Text("Your Financial Readiness Ladder")
+                    .font(.subheadline)
+                    .foregroundColor(.ascendTextSecondary)
+            }
+
+            Spacer()
+
+            Button {
+                isShowingInfoSheet = true
+            } label: {
+                Image(systemName: "info.circle")
+                    .font(.title2)
+                    .foregroundColor(.ascendAccent)
+            }
+            .accessibilityLabel("How do I earn points?")
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    // MARK: - Eligible (Financial Track)
+
+    private var eligibleContent: some View {
+        VStack(spacing: 28) {
+            ringGauge
+            currentTierCard
+            tierListSection
+        }
+    }
+
+    // MARK: - Ineligible (Tech Track)
+
+    private var ineligibleContent: some View {
+        VStack(spacing: 16) {
+            Image(systemName: "lock.fill")
+                .font(.system(size: 44, weight: .semibold))
+                .foregroundColor(.ascendAccent)
+                .padding(.top, 24)
+
+            Text("Readiness Ladder is Finance-only")
+                .font(.title3.bold())
+                .foregroundColor(.ascendTextPrimary)
+                .multilineTextAlignment(.center)
+
+            Text("The Confidence Score and tier progression are exclusive to the Financial track. Tech-track learners advance through the mentor matching path instead.")
+                .font(.subheadline)
+                .foregroundColor(.ascendTextSecondary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 8)
+        }
+        .padding(24)
+        .frame(maxWidth: .infinity)
+        .background(
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .fill(Color.ascendSurface)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 20, style: .continuous)
+                        .stroke(Color.ascendAccent.opacity(0.2), lineWidth: 1)
+                )
+        )
     }
 
     // MARK: - Ring Gauge
 
     private var ringGauge: some View {
         ZStack {
-            // Background ring
             Circle()
                 .stroke(Color.ascendSurface, lineWidth: 18)
                 .frame(width: 220, height: 220)
 
-            // Score ring
             Circle()
                 .trim(from: 0, to: animatedFraction)
                 .stroke(
@@ -83,7 +148,6 @@ struct ConfidenceDashboardView: View {
                 .frame(width: 220, height: 220)
                 .animation(.easeOut(duration: 1.2), value: animatedFraction)
 
-            // Score label
             VStack(spacing: 4) {
                 Text("\(viewModel.score)")
                     .font(.system(size: 52, weight: .black, design: .rounded))
@@ -99,40 +163,44 @@ struct ConfidenceDashboardView: View {
         .shadow(color: .ascendAccent.opacity(0.25), radius: 24)
     }
 
-    // MARK: - Tier Card
+    // MARK: - Current Tier Card
 
-    private var tierCard: some View {
-        HStack {
-            VStack(alignment: .leading, spacing: 4) {
-                Text("Current Tier")
-                    .font(.caption)
-                    .foregroundColor(.ascendTextSecondary)
-                Text(viewModel.tier)
-                    .font(.title3.bold())
-                    .foregroundColor(.ascendAccent)
-            }
+    private var currentTierCard: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Current Tier")
+                        .font(.caption)
+                        .foregroundColor(.ascendTextSecondary)
+                    Text(viewModel.tier.displayName)
+                        .font(.title3.bold())
+                        .foregroundColor(.ascendAccent)
+                }
 
-            Spacer()
+                Spacer()
 
-            // Animated progress bar
-            VStack(alignment: .trailing, spacing: 4) {
                 Text("\(Int(viewModel.normalizedFraction * 100))%")
                     .font(.caption.bold())
                     .foregroundColor(.ascendTextSecondary)
-
-                GeometryReader { geo in
-                    ZStack(alignment: .leading) {
-                        RoundedRectangle(cornerRadius: 4)
-                            .fill(Color.ascendSurface)
-                            .frame(height: 8)
-                        RoundedRectangle(cornerRadius: 4)
-                            .fill(LinearGradient(colors: [.ascendPrimary, .ascendAccent], startPoint: .leading, endPoint: .trailing))
-                            .frame(width: geo.size.width * animatedFraction, height: 8)
-                            .animation(.easeOut(duration: 1.0), value: animatedFraction)
-                    }
-                }
-                .frame(width: 120, height: 8)
             }
+
+            Text(viewModel.tier.readinessPrompt)
+                .font(.subheadline)
+                .foregroundColor(.ascendTextPrimary)
+                .fixedSize(horizontal: false, vertical: true)
+
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    RoundedRectangle(cornerRadius: 4)
+                        .fill(Color.ascendBackground)
+                        .frame(height: 8)
+                    RoundedRectangle(cornerRadius: 4)
+                        .fill(LinearGradient(colors: [.ascendPrimary, .ascendAccent], startPoint: .leading, endPoint: .trailing))
+                        .frame(width: geo.size.width * animatedFraction, height: 8)
+                        .animation(.easeOut(duration: 1.0), value: animatedFraction)
+                }
+            }
+            .frame(height: 8)
         }
         .padding(20)
         .background(
@@ -145,71 +213,60 @@ struct ConfidenceDashboardView: View {
         )
     }
 
-    // MARK: - Boost Button
+    // MARK: - Tier List
 
-    private var boostButton: some View {
-        Button {
-            withAnimation {
-                viewModel.boost(delta: 50)
-                animatedFraction = viewModel.normalizedFraction
-            }
-        } label: {
-            HStack {
-                Image(systemName: "bolt.fill")
-                Text(viewModel.isUpdating ? "Updating…" : "Boost My Confidence +50")
-                    .font(.headline)
-            }
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 16)
-            .background(
-                LinearGradient(
-                    colors: [.ascendPrimary, .ascendAccent],
-                    startPoint: .leading,
-                    endPoint: .trailing
-                )
-            )
-            .foregroundColor(.white)
-            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-            .shadow(color: .ascendPrimary.opacity(0.4), radius: 12, y: 6)
-        }
-        .disabled(viewModel.isUpdating)
-        .scaleEffect(viewModel.isUpdating ? 0.97 : 1.0)
-        .animation(.easeInOut(duration: 0.15), value: viewModel.isUpdating)
-    }
-
-    // MARK: - Milestones
-
-    private var milestonesSection: some View {
+    private var tierListSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Milestones")
+            Text("Readiness Ladder")
                 .font(.headline)
                 .foregroundColor(.ascendTextPrimary)
 
-            ForEach(milestones, id: \.threshold) { m in
-                milestonRow(m)
+            ForEach(ConfidenceTier.allCases, id: \.self) { tier in
+                tierRow(tier)
             }
         }
     }
 
-    private func milestonRow(_ m: Milestone) -> some View {
-        let achieved = viewModel.score >= m.threshold
-        return HStack(spacing: 14) {
+    private func tierRow(_ tier: ConfidenceTier) -> some View {
+        let isCurrent = viewModel.tier == tier
+        let isAchieved = viewModel.score >= tier.threshold
+
+        return HStack(alignment: .top, spacing: 14) {
             ZStack {
                 Circle()
-                    .fill(achieved ? Color.ascendAccent : Color.ascendSurface)
+                    .fill(isAchieved ? Color.ascendAccent : Color.ascendSurface)
                     .frame(width: 36, height: 36)
-                Image(systemName: achieved ? "checkmark" : "lock.fill")
+                Image(systemName: isAchieved ? "checkmark" : "lock.fill")
                     .font(.caption.bold())
-                    .foregroundColor(achieved ? .white : .ascendTextSecondary)
+                    .foregroundColor(isAchieved ? .white : .ascendTextSecondary)
             }
 
-            VStack(alignment: .leading, spacing: 2) {
-                Text(m.label)
-                    .font(.subheadline.bold())
-                    .foregroundColor(achieved ? .ascendTextPrimary : .ascendTextSecondary)
-                Text("\(m.threshold) points")
+            VStack(alignment: .leading, spacing: 4) {
+                HStack(spacing: 8) {
+                    Text(tier.displayName)
+                        .font(.subheadline.bold())
+                        .foregroundColor(isAchieved ? .ascendTextPrimary : .ascendTextSecondary)
+
+                    if isCurrent {
+                        Text("CURRENT")
+                            .font(.caption2.bold())
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(
+                                Capsule().fill(Color.ascendAccent)
+                            )
+                    }
+                }
+
+                Text("\(tier.range.lowerBound)–\(tier.range.upperBound) points")
                     .font(.caption)
                     .foregroundColor(.ascendTextSecondary)
+
+                Text(tier.readinessPrompt)
+                    .font(.caption)
+                    .foregroundColor(.ascendTextSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
 
             Spacer()
@@ -218,24 +275,83 @@ struct ConfidenceDashboardView: View {
         .background(
             RoundedRectangle(cornerRadius: 14, style: .continuous)
                 .fill(Color.ascendCard)
-                .opacity(achieved ? 1 : 0.6)
+                .opacity(isAchieved ? 1 : 0.6)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .stroke(isCurrent ? Color.ascendAccent : Color.clear, lineWidth: 2)
+                )
         )
     }
 
-    // MARK: - Data
+    // MARK: - Earning Points Sheet
 
-    private struct Milestone {
-        let threshold: Int
-        let label: String
+    private var earningPointsSheet: some View {
+        NavigationStack {
+            ZStack {
+                Color.ascendBackground.ignoresSafeArea()
+
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 20) {
+                        Text("Points are earned on the Financial Track only.")
+                            .font(.subheadline)
+                            .foregroundColor(.ascendTextSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+
+                        VStack(spacing: 10) {
+                            earningRow(icon: "checklist", title: "Complete Questionnaire", points: "+30")
+                            earningRow(icon: "square.and.pencil", title: "First Finance Post", points: "+25")
+                            earningRow(icon: "text.bubble", title: "Subsequent Posts", points: "+5")
+                            earningRow(icon: "hand.thumbsup", title: "Upvote", points: "+1")
+                            earningRow(icon: "bubble.left.and.bubble.right", title: "Mentor Replies", points: "+10")
+                        }
+
+                        Text("Tech-track learners do not earn confidence points — the Readiness Ladder is exclusive to the Financial track.")
+                            .font(.footnote)
+                            .foregroundColor(.ascendTextSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .padding(.top, 8)
+                    }
+                    .padding(20)
+                }
+            }
+            .navigationTitle("Earning Finance Points")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Done") { isShowingInfoSheet = false }
+                        .foregroundColor(.ascendAccent)
+                }
+            }
+        }
     }
 
-    private let milestones: [Milestone] = [
-        .init(threshold: 100,  label: "First Step 🌱"),
-        .init(threshold: 250,  label: "Building Momentum 🔥"),
-        .init(threshold: 500,  label: "Halfway Hero 🏅"),
-        .init(threshold: 750,  label: "Financial Warrior ⚔️"),
-        .init(threshold: 1000, label: "Ascended 🚀"),
-    ]
+    private func earningRow(icon: String, title: String, points: String) -> some View {
+        HStack(spacing: 14) {
+            ZStack {
+                Circle()
+                    .fill(Color.ascendAccent.opacity(0.15))
+                    .frame(width: 36, height: 36)
+                Image(systemName: icon)
+                    .font(.subheadline.bold())
+                    .foregroundColor(.ascendAccent)
+            }
+
+            Text(title)
+                .font(.subheadline)
+                .foregroundColor(.ascendTextPrimary)
+
+            Spacer()
+
+            Text(points)
+                .font(.subheadline.bold())
+                .foregroundColor(.ascendAccent)
+        }
+        .padding(14)
+        .background(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(Color.ascendSurface)
+        )
+    }
 }
 
 #Preview {
