@@ -36,24 +36,30 @@ struct ExpertiseChipPickerSection: View {
     private var searchField: some View {
         HStack(spacing: 8) {
             Image(systemName: "magnifyingglass")
-                .foregroundColor(.ascendTextSecondary)
+                .foregroundStyle(Color.investTextSecondary)
             TextField("Search expertise (e.g. Roth IRA, iOS)", text: $searchQuery)
                 .autocorrectionDisabled()
                 .textInputAutocapitalization(.never)
-                .foregroundColor(.white)
+                .foregroundStyle(Color.investTextPrimary)
             if !searchQuery.isEmpty {
                 Button {
                     searchQuery = ""
                 } label: {
                     Image(systemName: "xmark.circle.fill")
-                        .foregroundColor(.ascendTextSecondary)
+                        .foregroundStyle(Color.investTextSecondary)
                 }
                 .buttonStyle(.plain)
             }
         }
         .padding(10)
-        .background(Color.ascendSurface)
-        .clipShape(RoundedRectangle(cornerRadius: 8))
+        .background(
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .fill(Color.investBackground)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        .stroke(Color.investBorder, lineWidth: 1)
+                )
+        )
     }
 
     @ViewBuilder
@@ -63,7 +69,7 @@ struct ExpertiseChipPickerSection: View {
                  ? "Pick a track above to see suggestions."
                  : "No matches.")
                 .font(.caption)
-                .foregroundColor(.ascendTextSecondary)
+                .foregroundStyle(Color.investTextSecondary)
                 .padding(.vertical, 4)
         } else {
             ScrollView(.vertical, showsIndicators: true) {
@@ -76,11 +82,11 @@ struct ExpertiseChipPickerSection: View {
                                 .font(.footnote)
                                 .padding(.horizontal, 10)
                                 .padding(.vertical, 6)
-                                .background(Color.ascendCard)
-                                .foregroundColor(.ascendTextPrimary)
+                                .background(Color.investHeroBand)
+                                .foregroundStyle(Color.investAccent)
                                 .clipShape(Capsule())
                                 .overlay(
-                                    Capsule().stroke(Color.ascendAccent.opacity(0.4), lineWidth: 1)
+                                    Capsule().stroke(Color.investBorder, lineWidth: 1)
                                 )
                         }
                         .buttonStyle(.plain)
@@ -103,11 +109,11 @@ private struct ExpertiseChip: View {
         HStack(spacing: 6) {
             Text(term)
                 .font(.footnote.bold())
-                .foregroundColor(.white)
+                .foregroundStyle(Color.white)
             Button(action: onRemove) {
                 Image(systemName: "xmark")
                     .font(.system(size: 10, weight: .bold))
-                    .foregroundColor(.white.opacity(0.85))
+                    .foregroundStyle(Color.white.opacity(0.85))
             }
             .buttonStyle(.plain)
             .accessibilityLabel("Remove \(term)")
@@ -115,7 +121,7 @@ private struct ExpertiseChip: View {
         .padding(.horizontal, 10)
         .padding(.vertical, 6)
         .background(
-            Capsule().fill(Color.ascendAccent.opacity(0.85))
+            Capsule().fill(Color.investPrimary)
         )
     }
 }

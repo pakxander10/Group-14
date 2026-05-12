@@ -30,45 +30,24 @@ struct LearnerEditView: View {
 
     var body: some View {
         NavigationStack {
-            Form {
-                if let draft = viewModel.editingLearner {
-                    Section("Name") {
-                        TextField("Full Name", text: bindingForName(initial: draft.name))
-                            .textInputAutocapitalization(.words)
-                    }
+            ZStack {
+                Color.investBackground.ignoresSafeArea()
 
-                    Section("Interest") {
-                        Picker("Interest", selection: bindingForInterest(initial: draft.interest)) {
-                            ForEach(Self.interestOptions, id: \.value) { option in
-                                Text(option.label).tag(option.value)
-                            }
+                ScrollView {
+                    VStack(spacing: 16) {
+                        if let draft = viewModel.editingLearner {
+                            nameCard(initial: draft.name)
+                            interestCard(initial: draft.interest)
+                            goalCard(initial: draft.goal)
+                            majorCard(initial: draft.occupationMajor ?? "")
                         }
-                        .pickerStyle(.segmented)
-                    }
 
-                    Section("Goal") {
-                        Picker("Goal", selection: bindingForGoal(initial: draft.goal)) {
-                            ForEach(Self.goalOptions, id: \.value) { option in
-                                Text(option.label).tag(option.value)
-                            }
+                        if let message = viewModel.errorMessage {
+                            errorCard(message: message)
                         }
                     }
-
-                    Section("Major / Field of Study") {
-                        TextField(
-                            "e.g. Computer Science",
-                            text: bindingForMajor(initial: draft.occupationMajor ?? "")
-                        )
-                        .textInputAutocapitalization(.words)
-                    }
-                }
-
-                if let message = viewModel.errorMessage {
-                    Section {
-                        Text(message)
-                            .font(.footnote)
-                            .foregroundColor(.red)
-                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 20)
                 }
             }
             .navigationTitle("Edit Profile")
@@ -84,6 +63,7 @@ struct LearnerEditView: View {
                     Button("Save") {
                         viewModel.saveLearnerEdit()
                     }
+                    .bold()
                     .disabled(viewModel.isSaving)
                 }
             }
@@ -92,6 +72,91 @@ struct LearnerEditView: View {
                 if dismissed { dismiss() }
             }
         }
+        .tint(Color.investPrimary)
+    }
+
+    // MARK: - Section cards
+
+    private func nameCard(initial: String) -> some View {
+        sectionCard(title: "Name") {
+            TextField("Full Name", text: bindingForName(initial: initial))
+                .textInputAutocapitalization(.words)
+                .textFieldStyle(InvestTextFieldStyle())
+        }
+    }
+
+    private func interestCard(initial: String) -> some View {
+        sectionCard(title: "Interest") {
+            Picker("Interest", selection: bindingForInterest(initial: initial)) {
+                ForEach(Self.interestOptions, id: \.value) { option in
+                    Text(option.label).tag(option.value)
+                }
+            }
+            .pickerStyle(.segmented)
+        }
+    }
+
+    private func goalCard(initial: String) -> some View {
+        sectionCard(title: "Goal") {
+            Picker("Goal", selection: bindingForGoal(initial: initial)) {
+                ForEach(Self.goalOptions, id: \.value) { option in
+                    Text(option.label).tag(option.value)
+                }
+            }
+            .pickerStyle(.menu)
+            .tint(Color.investPrimary)
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+
+    private func majorCard(initial: String) -> some View {
+        sectionCard(title: "Major / Field of Study") {
+            TextField(
+                "e.g. Computer Science",
+                text: bindingForMajor(initial: initial)
+            )
+            .textInputAutocapitalization(.words)
+            .textFieldStyle(InvestTextFieldStyle())
+        }
+    }
+
+    private func errorCard(message: String) -> some View {
+        Text(message)
+            .font(.footnote)
+            .foregroundColor(.red)
+            .padding(14)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .fill(Color.investSurface)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            .stroke(Color.red.opacity(0.4), lineWidth: 1)
+                    )
+            )
+    }
+
+    private func sectionCard<Content: View>(
+        title: String,
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text(title.uppercased())
+                .font(.caption.weight(.bold))
+                .foregroundStyle(Color.investAccent)
+                .tracking(0.5)
+            content()
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(Color.investSurface)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .stroke(Color.investBorder.opacity(0.6), lineWidth: 1)
+                )
+        )
     }
 
     // MARK: - Bindings
@@ -122,5 +187,24 @@ struct LearnerEditView: View {
             get: { viewModel.editingLearner?.occupationMajor ?? initial },
             set: { viewModel.editingLearner?.occupationMajor = $0.isEmpty ? nil : $0 }
         )
+    }
+}
+
+// MARK: - Shared text-field style
+
+struct InvestTextFieldStyle: TextFieldStyle {
+    func _body(configuration: TextField<Self._Label>) -> some View {
+        configuration
+            .padding(.horizontal, 12)
+            .padding(.vertical, 10)
+            .background(
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .fill(Color.investBackground)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                            .stroke(Color.investBorder, lineWidth: 1)
+                    )
+            )
+            .foregroundStyle(Color.investTextPrimary)
     }
 }

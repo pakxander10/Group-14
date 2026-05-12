@@ -35,9 +35,14 @@ final class ThreadViewModel: ObservableObject {
     }
 
     private let service: ThreadServiceProtocol
+    private let tracker: UpvoteTracking
 
-    init(service: ThreadServiceProtocol? = nil) {
+    init(
+        service: ThreadServiceProtocol? = nil,
+        tracker: UpvoteTracking? = nil
+    ) {
         self.service = service ?? ThreadService()
+        self.tracker = tracker ?? UpvoteTracker()
     }
 
     // MARK: - Intents
@@ -128,12 +133,30 @@ final class ThreadViewModel: ObservableObject {
 
     // MARK: - Upvoting
 
-    /// Increment the upvote count on a post the user can currently see. If the id
-    /// is unknown to this VM, skip the service call entirely so the action is
-    /// a safe no-op (the upvote button only renders against `posts`, so this is
-    /// a defensive check, not an expected path).
-    func upvotePost(id: String) {
-        guard posts.contains(where: { $0.id == id }) else { return }
+    /// Has the given learner already upvoted this post? Views consult this so
+    /// the upvote button can render in a "voted" state and disable additional
+    /// taps.
+    func hasUpvotedPost(_ postId: String, by userId: String) -> Bool {
+        tracker.hasUpvotedPost(postId, by: userId)
+    }
+
+    /// Has the given learner already upvoted this reply?
+    func hasUpvotedReply(_ replyId: String, by userId: String) -> Bool {
+        tracker.hasUpvotedReply(replyId, by: userId)
+    }
+
+    /// Increment the upvote count on a post visible to the user. The call is a
+    /// no-op (no service call) when:
+    ///   - the post id is not in the local feed,
+    ///   - the user id is empty, or
+    ///   - this `(userId, postId)` pair has already been recorded.
+    /// The local record is only inserted after the service confirms success so
+    /// a network failure doesn't permanently lock the user out.
+    func upvotePost(id: String, by userId: String) {
+        guard !userId.isEmpty,
+              posts.contains(where: { $0.id == id }),
+              !tracker.hasUpvotedPost(id, by: userId)
+        else { return }
 
         Task {
             do {
@@ -141,17 +164,21 @@ final class ThreadViewModel: ObservableObject {
                 if let index = posts.firstIndex(where: { $0.id == id }) {
                     posts[index] = updated
                 }
+                tracker.recordPostUpvote(id, by: userId)
             } catch {
                 errorMessage = error.localizedDescription
             }
         }
     }
 
-    /// Increment the upvote count on a reply nested inside `postId`. If either
-    /// the post or the reply is unknown to this VM, skip the service call.
-    func upvoteReply(postId: String, replyId: String) {
-        guard let post = posts.first(where: { $0.id == postId }),
-              post.replies.contains(where: { $0.id == replyId })
+    /// Increment the upvote count on a reply nested inside `postId`. Same
+    /// no-op rules as `upvotePost` — including the one-vote-per-learner check
+    /// — apply to the reply id.
+    func upvoteReply(postId: String, replyId: String, by userId: String) {
+        guard !userId.isEmpty,
+              let post = posts.first(where: { $0.id == postId }),
+              post.replies.contains(where: { $0.id == replyId }),
+              !tracker.hasUpvotedReply(replyId, by: userId)
         else { return }
 
         Task {
@@ -175,6 +202,7 @@ final class ThreadViewModel: ObservableObject {
                     upvotes: post.upvotes,
                     replies: replies
                 )
+                tracker.recordReplyUpvote(replyId, by: userId)
             } catch {
                 errorMessage = error.localizedDescription
             }

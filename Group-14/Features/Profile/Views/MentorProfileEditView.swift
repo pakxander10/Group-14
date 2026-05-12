@@ -1,5 +1,5 @@
 //
-//  MentorEditView.swift
+//  MentorProfileEditView.swift
 //  Group-14 — Features/Profile/Views
 //
 //  Sheet form for editing a mentor's profile. Reuses the searchable
@@ -17,23 +17,27 @@ struct MentorProfileEditView: View {
 
     var body: some View {
         NavigationStack {
-            Form {
-                if viewModel.editingMentor != nil {
-                    basicSection
-                    trackSection
-                    bioSection
-                    expertiseSection
-                    experienceSection
-                    contactSection
-                    educationSection
-                }
+            ZStack {
+                Color.investBackground.ignoresSafeArea()
 
-                if let message = viewModel.errorMessage {
-                    Section {
-                        Text(message)
-                            .font(.footnote)
-                            .foregroundColor(.red)
+                ScrollView {
+                    VStack(spacing: 16) {
+                        if viewModel.editingMentor != nil {
+                            basicCard
+                            trackCard
+                            bioCard
+                            expertiseCard
+                            experienceCard
+                            contactCard
+                            educationCard
+                        }
+
+                        if let message = viewModel.errorMessage {
+                            errorCard(message: message)
+                        }
                     }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 20)
                 }
             }
             .navigationTitle("Edit Mentor Profile")
@@ -49,6 +53,7 @@ struct MentorProfileEditView: View {
                     Button("Save") {
                         viewModel.saveMentorEdit()
                     }
+                    .bold()
                     .disabled(viewModel.isSaving)
                 }
             }
@@ -56,21 +61,27 @@ struct MentorProfileEditView: View {
                 if dismissed { dismiss() }
             }
         }
+        .tint(Color.investPrimary)
     }
 
-    // MARK: - Sections
+    // MARK: - Section cards
 
-    private var basicSection: some View {
-        Section("Basics") {
-            TextField("Full Name", text: bindingForKeyPath(\.name))
-                .textInputAutocapitalization(.words)
-            TextField("Title", text: bindingForKeyPath(\.title))
-            TextField("Company", text: bindingForKeyPath(\.company))
+    private var basicCard: some View {
+        sectionCard(title: "Basics") {
+            VStack(spacing: 10) {
+                TextField("Full Name", text: bindingForKeyPath(\.name))
+                    .textInputAutocapitalization(.words)
+                    .textFieldStyle(InvestTextFieldStyle())
+                TextField("Title", text: bindingForKeyPath(\.title))
+                    .textFieldStyle(InvestTextFieldStyle())
+                TextField("Company", text: bindingForKeyPath(\.company))
+                    .textFieldStyle(InvestTextFieldStyle())
+            }
         }
     }
 
-    private var trackSection: some View {
-        Section("Track") {
+    private var trackCard: some View {
+        sectionCard(title: "Track") {
             Picker("Track", selection: bindingForKeyPath(\.track)) {
                 ForEach(MentorTrack.allCases, id: \.rawValue) { option in
                     Text(option.displayName).tag(option.rawValue)
@@ -80,15 +91,26 @@ struct MentorProfileEditView: View {
         }
     }
 
-    private var bioSection: some View {
-        Section("Bio") {
+    private var bioCard: some View {
+        sectionCard(title: "Bio") {
             TextEditor(text: bindingForKeyPath(\.bio))
                 .frame(minHeight: 100)
+                .scrollContentBackground(.hidden)
+                .padding(10)
+                .background(
+                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        .fill(Color.investBackground)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                .stroke(Color.investBorder, lineWidth: 1)
+                        )
+                )
+                .foregroundStyle(Color.investTextPrimary)
         }
     }
 
-    private var expertiseSection: some View {
-        Section("Areas of Expertise") {
+    private var expertiseCard: some View {
+        sectionCard(title: "Areas of Expertise") {
             ExpertiseChipPickerSection(
                 selected: viewModel.editingMentor?.expertise ?? [],
                 suggestions: expertiseSuggestions,
@@ -96,45 +118,93 @@ struct MentorProfileEditView: View {
                 onAdd: addExpertise,
                 onRemove: removeExpertise
             )
-            .padding(.vertical, 4)
         }
     }
 
-    private var experienceSection: some View {
-        Section("Years of Experience") {
+    private var experienceCard: some View {
+        sectionCard(title: "Years of Experience") {
             Stepper(
                 value: bindingForKeyPath(\.yearsExperience),
                 in: 0...50
             ) {
                 Text("\(viewModel.editingMentor?.yearsExperience ?? 0) years")
+                    .foregroundStyle(Color.investTextPrimary)
             }
         }
     }
 
-    private var contactSection: some View {
-        Section("Contact (optional)") {
-            TextField(
-                "Email",
-                text: bindingForOptional(\.email)
-            )
-            .keyboardType(.emailAddress)
-            .textInputAutocapitalization(.never)
-            .autocorrectionDisabled()
+    private var contactCard: some View {
+        sectionCard(title: "Contact (optional)") {
+            VStack(spacing: 10) {
+                TextField("Email", text: bindingForOptional(\.email))
+                    .keyboardType(.emailAddress)
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
+                    .textFieldStyle(InvestTextFieldStyle())
 
-            TextField(
-                "LinkedIn URL",
-                text: bindingForOptional(\.linkedInUrl)
-            )
-            .textInputAutocapitalization(.never)
-            .autocorrectionDisabled()
+                TextField("LinkedIn URL", text: bindingForOptional(\.linkedInUrl))
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
+                    .textFieldStyle(InvestTextFieldStyle())
+            }
         }
     }
 
-    private var educationSection: some View {
-        Section("Education (one per line, optional)") {
+    private var educationCard: some View {
+        sectionCard(title: "Education (one per line, optional)") {
             TextEditor(text: bindingForEducation())
-                .frame(minHeight: 70)
+                .frame(minHeight: 80)
+                .scrollContentBackground(.hidden)
+                .padding(10)
+                .background(
+                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        .fill(Color.investBackground)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                .stroke(Color.investBorder, lineWidth: 1)
+                        )
+                )
+                .foregroundStyle(Color.investTextPrimary)
         }
+    }
+
+    private func errorCard(message: String) -> some View {
+        Text(message)
+            .font(.footnote)
+            .foregroundStyle(.red)
+            .padding(14)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .fill(Color.investSurface)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            .stroke(Color.red.opacity(0.4), lineWidth: 1)
+                    )
+            )
+    }
+
+    private func sectionCard<Content: View>(
+        title: String,
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text(title.uppercased())
+                .font(.caption.weight(.bold))
+                .foregroundStyle(Color.investAccent)
+                .tracking(0.5)
+            content()
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(Color.investSurface)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .stroke(Color.investBorder.opacity(0.6), lineWidth: 1)
+                )
+        )
     }
 
     // MARK: - Expertise helpers

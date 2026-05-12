@@ -67,8 +67,11 @@ struct ThreadFeedView: View {
                     NavigationLink {
                         ThreadDetailView(post: post, viewModel: viewModel)
                     } label: {
-                        PostCard(post: post) {
-                            viewModel.upvotePost(id: post.id)
+                        PostCard(
+                            post: post,
+                            hasUpvoted: viewModel.hasUpvotedPost(post.id, by: userId)
+                        ) {
+                            viewModel.upvotePost(id: post.id, by: userId)
                         }
                     }
                     .buttonStyle(.plain)
@@ -104,6 +107,7 @@ struct ThreadFeedView: View {
 
 private struct PostCard: View {
     let post: ThreadPost
+    let hasUpvoted: Bool
     let onUpvote: () -> Void
 
     var body: some View {
@@ -137,7 +141,7 @@ private struct PostCard: View {
                         .foregroundStyle(Color.investTextSecondary)
                 }
                 Spacer()
-                UpvoteButton(count: post.upvotes, action: onUpvote)
+                UpvoteButton(count: post.upvotes, hasUpvoted: hasUpvoted, action: onUpvote)
             }
             .padding(.top, 2)
         }
@@ -160,19 +164,25 @@ private struct PostCard: View {
 /// NavigationLink row without consuming the row's tap target.
 struct UpvoteButton: View {
     let count: Int
+    let hasUpvoted: Bool
     let action: () -> Void
 
     var body: some View {
         Button(action: action) {
-            Label("\(count)", systemImage: "arrow.up.circle.fill")
+            Label("\(count)", systemImage: hasUpvoted ? "arrow.up.circle.fill" : "arrow.up.circle")
                 .font(.caption.weight(.semibold))
                 .labelStyle(.titleAndIcon)
                 .padding(.horizontal, 10)
                 .padding(.vertical, 5)
-                .background(Color.investHeroBand, in: Capsule())
-                .foregroundStyle(Color.investPrimary)
+                .background(
+                    Capsule()
+                        .fill(hasUpvoted ? Color.investPrimary : Color.investHeroBand)
+                )
+                .foregroundStyle(hasUpvoted ? Color.white : Color.investPrimary)
         }
         .buttonStyle(.borderless)
+        .disabled(hasUpvoted)
+        .accessibilityLabel(hasUpvoted ? "Upvoted, \(count) total" : "Upvote, \(count) total")
     }
 }
 

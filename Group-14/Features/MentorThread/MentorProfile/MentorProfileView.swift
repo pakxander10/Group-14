@@ -2,7 +2,8 @@
 //  MentorProfileView.swift
 //  Group-14
 //
-//  Created by Medha Kuchimanchi on 5/11/26.
+//  Post-questionnaire mentor detail. Shown after the learner is matched
+//  with a mentor via the questionnaire flow.
 //
 
 import SwiftUI
@@ -37,81 +38,19 @@ struct MentorProfileView: View {
 
     var body: some View {
         ZStack {
-            Color.black.ignoresSafeArea()
+            Color.investBackground.ignoresSafeArea()
 
             ScrollView {
                 VStack(spacing: 20) {
-
-                    // MARK: Photo Picker
-                    PhotosPicker(selection: $selectedPhoto, matching: .images) {
-                        ZStack {
-                            Circle()
-                                .fill(Color(white: 0.2))
-                                .frame(width: 100, height: 100)
-
-                            if let profileImage {
-                                profileImage
-                                    .resizable()
-                                    .scaledToFill()
-                                    .frame(width: 100, height: 100)
-                                    .clipShape(Circle())
-                            } else {
-                                Image(systemName: "plus")
-                                    .font(.title2)
-                                    .foregroundStyle(.blue)
-                            }
-                        }
+                    avatarSection
+                    nameSection
+                    infoCard
+                    if let education = mentor.educationHistory, !education.isEmpty {
+                        educationCard(entries: education)
                     }
-                    .onChange(of: selectedPhoto) {
-                        Task {
-                            if let data = try? await selectedPhoto?.loadTransferable(type: Data.self),
-                               let uiImage = UIImage(data: data) {
-                                profileImage = Image(uiImage: uiImage)
-                                mentor.profilePicture = data
-                            }
-                        }
-                    }
-
-                    // MARK: Name
-                    Text(mentor.name)
-                        .font(.title2).bold()
-                        .foregroundStyle(.white)
-
-                    Divider()
-                        .overlay(Color.white.opacity(0.2))
-
-                    // MARK: Info Rows
-                    VStack(alignment: .leading, spacing: 16) {
-                        InfoRow(label: "Title", value: mentor.title)
-                        InfoRow(label: "Company", value: mentor.company)
-                        InfoRow(label: "Experience", value: "\(mentor.yearsExperience) years")
-
-                        if let email = mentor.email, !email.isEmpty {
-                            InfoRow(label: "Email", value: email)
-                        }
-
-                        if let linkedin = mentor.linkedInUrl, !linkedin.isEmpty {
-                            InfoRow(label: "LinkedIn", value: linkedin)
-                        }
-
-                        InfoRow(label: "Bio", value: mentor.bio)
-
-                        if let education = mentor.educationHistory, !education.isEmpty {
-                            VStack(alignment: .leading, spacing: 6) {
-                                Text("Education")
-                                    .font(.caption)
-                                    .foregroundStyle(.gray)
-                                ForEach(education, id: \.self) { entry in
-                                    Text("• \(entry)")
-                                        .foregroundStyle(.white)
-                                }
-                            }
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                        }
-                    }
-                    .padding(.horizontal)
                 }
-                .padding(.top, 40)
+                .padding(.horizontal, 16)
+                .padding(.top, 24)
                 .padding(.bottom, 40)
             }
         }
@@ -127,29 +66,140 @@ struct MentorProfileView: View {
                     }
                 } label: {
                     Image(systemName: "ellipsis")
-                        .foregroundStyle(.white)
+                        .foregroundStyle(Color.investPrimary)
                 }
             }
         }
         .sheet(isPresented: $showingEdit) {
             MentorEditView(mentor: $mentor)
         }
+        .tint(Color.investPrimary)
     }
-}
 
-// MARK: - Info Row
+    // MARK: - Sections
 
-private struct InfoRow: View {
-    let label: String
-    let value: String
+    private var avatarSection: some View {
+        PhotosPicker(selection: $selectedPhoto, matching: .images) {
+            ZStack {
+                Circle()
+                    .fill(Color.investHeroBand)
+                    .overlay(Circle().stroke(Color.investBorder, lineWidth: 1))
+                    .frame(width: 112, height: 112)
 
-    var body: some View {
+                if let profileImage {
+                    profileImage
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: 112, height: 112)
+                        .clipShape(Circle())
+                        .overlay(Circle().stroke(Color.investBorder, lineWidth: 1))
+                } else {
+                    Text(mentor.avatarInitials)
+                        .font(.title.bold())
+                        .foregroundStyle(Color.investPrimary)
+                }
+
+                Circle()
+                    .fill(Color.investPrimary)
+                    .frame(width: 32, height: 32)
+                    .overlay(
+                        Image(systemName: "camera.fill")
+                            .font(.caption.weight(.bold))
+                            .foregroundStyle(Color.white)
+                    )
+                    .offset(x: 40, y: 40)
+            }
+        }
+        .buttonStyle(.plain)
+        .onChange(of: selectedPhoto) {
+            Task {
+                if let data = try? await selectedPhoto?.loadTransferable(type: Data.self),
+                   let uiImage = UIImage(data: data) {
+                    profileImage = Image(uiImage: uiImage)
+                    mentor.profilePicture = data
+                }
+            }
+        }
+    }
+
+    private var nameSection: some View {
+        VStack(spacing: 4) {
+            Text(mentor.name)
+                .font(.title2.bold())
+                .foregroundStyle(Color.investTitle)
+            Text(mentor.title)
+                .font(.subheadline)
+                .foregroundStyle(Color.investTextSecondary)
+        }
+    }
+
+    private var infoCard: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            infoRow(label: "Company", value: mentor.company)
+            infoRow(label: "Experience", value: "\(mentor.yearsExperience) years")
+
+            if let email = mentor.email, !email.isEmpty {
+                infoRow(label: "Email", value: email)
+            }
+
+            if let linkedin = mentor.linkedInUrl, !linkedin.isEmpty {
+                infoRow(label: "LinkedIn", value: linkedin)
+            }
+
+            infoRow(label: "Bio", value: mentor.bio)
+        }
+        .padding(18)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .fill(Color.investSurface)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                        .stroke(Color.investBorder.opacity(0.6), lineWidth: 1)
+                )
+        )
+    }
+
+    private func educationCard(entries: [String]) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("EDUCATION")
+                .font(.caption.weight(.bold))
+                .foregroundStyle(Color.investAccent)
+                .tracking(0.5)
+            ForEach(entries, id: \.self) { entry in
+                HStack(alignment: .top, spacing: 8) {
+                    Circle()
+                        .fill(Color.investPrimary)
+                        .frame(width: 6, height: 6)
+                        .padding(.top, 7)
+                    Text(entry)
+                        .font(.subheadline)
+                        .foregroundStyle(Color.investTextPrimary)
+                }
+            }
+        }
+        .padding(18)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .fill(Color.investSurface)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                        .stroke(Color.investBorder.opacity(0.6), lineWidth: 1)
+                )
+        )
+    }
+
+    private func infoRow(label: String, value: String) -> some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text(label)
-                .font(.caption)
-                .foregroundStyle(.gray)
+            Text(label.uppercased())
+                .font(.caption2.weight(.bold))
+                .foregroundStyle(Color.investAccent)
+                .tracking(0.5)
             Text(value)
-                .foregroundStyle(.white)
+                .font(.subheadline)
+                .foregroundStyle(Color.investTextPrimary)
+                .fixedSize(horizontal: false, vertical: true)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
@@ -174,44 +224,68 @@ struct MentorEditView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                Color.black.ignoresSafeArea()
+                Color.investBackground.ignoresSafeArea()
 
-                Form {
-                    Section("Personal") {
-                        EditField(label: "Name", text: $name)
-                        EditField(label: "Email", text: $email)
-                        EditField(label: "LinkedIn URL", text: $linkedInUrl)
-                    }
+                ScrollView {
+                    VStack(spacing: 16) {
+                        sectionCard(title: "Personal") {
+                            VStack(spacing: 10) {
+                                editField(label: "Name", text: $name)
+                                editField(label: "Email", text: $email)
+                                editField(label: "LinkedIn URL", text: $linkedInUrl)
+                            }
+                        }
 
-                    Section("Professional") {
-                        EditField(label: "Title", text: $title)
-                        EditField(label: "Company", text: $company)
-                        EditField(label: "Track", text: $track)
-                        EditField(label: "Years of Experience", text: $yearsExperience)
-                    }
+                        sectionCard(title: "Professional") {
+                            VStack(spacing: 10) {
+                                editField(label: "Title", text: $title)
+                                editField(label: "Company", text: $company)
+                                editField(label: "Track", text: $track)
+                                editField(label: "Years of Experience", text: $yearsExperience)
+                            }
+                        }
 
-                    Section("Bio") {
-                        TextEditor(text: $bio)
-                            .frame(minHeight: 100)
-                            .scrollContentBackground(.hidden)
-                            .foregroundStyle(.white)
-                    }
+                        sectionCard(title: "Bio") {
+                            TextEditor(text: $bio)
+                                .frame(minHeight: 100)
+                                .scrollContentBackground(.hidden)
+                                .padding(10)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                        .fill(Color.investBackground)
+                                        .overlay(
+                                            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                                .stroke(Color.investBorder, lineWidth: 1)
+                                        )
+                                )
+                                .foregroundStyle(Color.investTextPrimary)
+                        }
 
-                    Section("Education (one per line)") {
-                        TextEditor(text: $educationHistory)
-                            .frame(minHeight: 80)
-                            .scrollContentBackground(.hidden)
-                            .foregroundStyle(.white)
+                        sectionCard(title: "Education (one per line)") {
+                            TextEditor(text: $educationHistory)
+                                .frame(minHeight: 80)
+                                .scrollContentBackground(.hidden)
+                                .padding(10)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                        .fill(Color.investBackground)
+                                        .overlay(
+                                            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                                .stroke(Color.investBorder, lineWidth: 1)
+                                        )
+                                )
+                                .foregroundStyle(Color.investTextPrimary)
+                        }
                     }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 20)
                 }
-                .scrollContentBackground(.hidden)
             }
             .navigationTitle("Edit Profile")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Button("Cancel") { dismiss() }
-                        .foregroundStyle(.blue)
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Save") {
@@ -230,7 +304,6 @@ struct MentorEditView: View {
                         dismiss()
                     }
                     .bold()
-                    .foregroundStyle(.blue)
                 }
             }
             .onAppear {
@@ -245,23 +318,40 @@ struct MentorEditView: View {
                 educationHistory = (mentor.educationHistory ?? []).joined(separator: "\n")
             }
         }
+        .tint(Color.investPrimary)
     }
-}
 
-// MARK: - Edit Field
-
-private struct EditField: View {
-    let label: String
-    @Binding var text: String
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
+    private func editField(label: String, text: Binding<String>) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
             Text(label)
-                .font(.caption)
-                .foregroundStyle(.gray)
-            TextField(label, text: $text)
-                .foregroundStyle(.white)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(Color.investTextSecondary)
+            TextField(label, text: text)
+                .textFieldStyle(InvestTextFieldStyle())
         }
+    }
+
+    private func sectionCard<Content: View>(
+        title: String,
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text(title.uppercased())
+                .font(.caption.weight(.bold))
+                .foregroundStyle(Color.investAccent)
+                .tracking(0.5)
+            content()
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(Color.investSurface)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .stroke(Color.investBorder.opacity(0.6), lineWidth: 1)
+                )
+        )
     }
 }
 

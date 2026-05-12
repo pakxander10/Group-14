@@ -69,8 +69,11 @@ struct ThreadDetailView: View {
                     .font(.caption)
                     .foregroundStyle(Color.investTextSecondary)
                 Spacer()
-                UpvoteButton(count: currentPost.upvotes) {
-                    viewModel.upvotePost(id: currentPost.id)
+                UpvoteButton(
+                    count: currentPost.upvotes,
+                    hasUpvoted: viewModel.hasUpvotedPost(currentPost.id, by: userId)
+                ) {
+                    viewModel.upvotePost(id: currentPost.id, by: userId)
                 }
             }
 
@@ -104,8 +107,11 @@ struct ThreadDetailView: View {
                 emptyRepliesPlaceholder
             } else {
                 ForEach(currentPost.replies) { reply in
-                    ReplyCard(reply: reply) {
-                        viewModel.upvoteReply(postId: currentPost.id, replyId: reply.id)
+                    ReplyCard(
+                        reply: reply,
+                        hasUpvoted: viewModel.hasUpvotedReply(reply.id, by: userId)
+                    ) {
+                        viewModel.upvoteReply(postId: currentPost.id, replyId: reply.id, by: userId)
                     }
                 }
             }
@@ -205,6 +211,7 @@ struct ThreadDetailView: View {
 
 private struct ReplyCard: View {
     let reply: ThreadReply
+    let hasUpvoted: Bool
     let onUpvote: () -> Void
 
     private var isMentor: Bool { reply.authorRole == "mentor" }
@@ -226,7 +233,7 @@ private struct ReplyCard: View {
                         .foregroundStyle(Color.investPrimary)
                 }
                 Spacer()
-                UpvoteButton(count: reply.upvotes, action: onUpvote)
+                UpvoteButton(count: reply.upvotes, hasUpvoted: hasUpvoted, action: onUpvote)
             }
             Text(reply.body)
                 .font(.subheadline)
