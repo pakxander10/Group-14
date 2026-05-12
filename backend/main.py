@@ -310,6 +310,11 @@ def create_post(body: CreatePostRequest):
             status_code=400,
             detail="category must be 'Financial' or 'Tech'.",
         )
+    if not body.title.strip() or not body.body.strip():
+        raise HTTPException(
+            status_code=400,
+            detail="Title and body are required.",
+        )
 
     new_id = f"p{uuid.uuid4().hex[:6]}"
     post = ThreadPost(
@@ -343,6 +348,8 @@ def create_reply(body: CreateReplyRequest):
             status_code=404,
             detail=f"Mentor '{body.author_id}' not found.",
         )
+    if not body.body.strip():
+        raise HTTPException(status_code=400, detail="Reply body is required.")
 
     new_id = f"r{uuid.uuid4().hex[:6]}"
     reply = ThreadReply(

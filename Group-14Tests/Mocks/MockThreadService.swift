@@ -37,29 +37,6 @@ final class MockThreadService: ThreadServiceProtocol {
         mentorNames[id] = name
     }
 
-    @discardableResult
-    func seedPost(
-        id: String = "p_seed",
-        authorId: String,
-        category: String = ThreadCategory.financial.rawValue,
-        title: String = "Seed question",
-        body: String = "Seed body"
-    ) -> ThreadPost {
-        let post = ThreadPost(
-            id: id,
-            authorId: authorId,
-            authorName: learnerNames[authorId] ?? "Unknown",
-            authorRole: "learner",
-            category: category,
-            title: title,
-            body: body,
-            upvotes: 0,
-            replies: []
-        )
-        posts[id] = post
-        return post
-    }
-
     // MARK: - ThreadServiceProtocol
 
     func fetchFeed() async throws -> [ThreadPost] {

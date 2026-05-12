@@ -77,8 +77,10 @@ final class ThreadViewModel: ObservableObject {
             defer { isSubmittingPost = false }
             do {
                 _ = try await service.createPost(request)
+                // Refresh the feed inline before signalling success so the dismissed
+                // composer reveals an already-up-to-date list.
+                posts = try await service.fetchFeed()
                 resetComposer()
-                loadFeed()
                 onSuccess?()
             } catch {
                 postErrorMessage = error.localizedDescription
@@ -109,7 +111,7 @@ final class ThreadViewModel: ObservableObject {
             defer { isSubmittingReply = false }
             do {
                 _ = try await service.createReply(request)
-                loadFeed()
+                posts = try await service.fetchFeed()
                 onSuccess?()
             } catch {
                 replyErrorMessage = error.localizedDescription

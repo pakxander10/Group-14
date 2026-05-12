@@ -45,7 +45,7 @@
 
 ### iOS — ATDD slice (Steps 1 + 2)
 
-- [ ] **S1.** Create `Group-14/Features/Thread/Models/ThreadModels.swift` (replaces the old `MentorThread/Models/ThreadModels.swift`):
+- [ ] **S1.** Update `Group-14/Features/MentorThread/Models/ThreadModels.swift` (the existing folder is kept; production code stays at `MentorThread/` while tests live under `Group-14Tests/Features/Thread/`):
   - `User`, `Category` (alias of String constants — Financial/Tech), `ThreadPost`, `ThreadReply`, `Notification`, `CreatePostRequest`, `CreateReplyRequest`.
 - [ ] **S2.** Create `ThreadServiceProtocol` + concrete `ThreadService` + `MockThreadService`:
   - `fetchFeed()` / `createPost(_)` / `createReply(_)` / `fetchInbox(learnerId:)`
