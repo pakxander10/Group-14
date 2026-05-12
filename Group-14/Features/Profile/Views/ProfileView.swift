@@ -8,6 +8,7 @@ import SwiftUI
 struct ProfileView: View {
     @StateObject private var viewModel = ProfileViewModel()
     @AppStorage("learnerId") private var learnerId: String = ""
+    @State private var showingSignOutConfirmation = false
 
     var body: some View {
         NavigationStack {
@@ -50,7 +51,7 @@ struct ProfileView: View {
 
     private var signOutButton: some View {
         Button(role: .destructive) {
-            learnerId = ""
+            showingSignOutConfirmation = true
         } label: {
             Label("Sign Out", systemImage: "rectangle.portrait.and.arrow.right")
                 .font(.subheadline.bold())
@@ -63,6 +64,18 @@ struct ProfileView: View {
                 .foregroundColor(.red)
         }
         .padding(.top, 8)
+        .confirmationDialog(
+            "Sign out of Ascend?",
+            isPresented: $showingSignOutConfirmation,
+            titleVisibility: .visible
+        ) {
+            Button("Sign Out", role: .destructive) {
+                learnerId = ""
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("You'll need to create a new profile to sign back in.")
+        }
     }
 
     // MARK: - Subviews
