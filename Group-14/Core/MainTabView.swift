@@ -20,7 +20,7 @@ struct MainTabView: View {
                     Label("Confidence", systemImage: "chart.bar.fill")
                 }
 
-            QuestionnaireView()
+            MentorMatchView()
                 .tabItem {
                     Label("Match", systemImage: "sparkles")
                 }
