@@ -12,7 +12,8 @@ import PhotosUI
 struct LearnerProfileCreationView: View {
 
     @StateObject private var viewModel = LearnerProfileCreationViewModel()
-    var onComplete: ((LearnerProfile) -> Void)? = nil
+    @AppStorage("userId")   private var userId:   String = ""
+    @AppStorage("userRole") private var userRole: String = ""
 
     @State private var pickerItem: PhotosPickerItem?
     @State private var photoPreview: Image?
@@ -55,7 +56,8 @@ struct LearnerProfileCreationView: View {
         }
         .onChange(of: viewModel.state) { _, newValue in
             if case .created(let learner) = newValue {
-                onComplete?(learner)
+                userId = learner.id
+                userRole = UserRole.learner.storageValue
             }
         }
     }
