@@ -6,6 +6,16 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXContainerItemProxy section */
+		7A0001000000000000000008 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 61C680692FB25FB700A81198 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 61C680702FB25FB700A81198;
+			remoteInfo = "Group-14";
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXFileReference section */
 		61C680712FB25FB700A81198 /* Group-14.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Group-14.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		7A0001000000000000000001 /* Group-14Tests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Group-14Tests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -180,15 +190,7 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
-/* Begin PBXContainerItemProxy section */
-		7A0001000000000000000008 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 61C680692FB25FB700A81198 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = 61C680702FB25FB700A81198;
-			remoteInfo = "Group-14";
-		};
-/* End PBXContainerItemProxy section */
+
 /* Begin PBXTargetDependency section */
 		7A0001000000000000000007 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
