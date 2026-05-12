@@ -24,8 +24,13 @@ struct ThreadFeedView: View {
                 content
             }
             .navigationTitle("Q Thread")
-            .navigationBarTitleDisplayMode(.large)
+            .navigationBarTitleDisplayMode(.inline)
             .toolbar {
+                ToolbarItem(placement: .principal) {
+                    Text("Q Thread")
+                        .font(.headline.weight(.bold))
+                        .foregroundStyle(Color.investPrimary)
+                }
                 if isLearner {
                     ToolbarItem(placement: .topBarTrailing) {
                         Button {
@@ -234,31 +239,21 @@ private struct ComposePostSheet: View {
 
     var body: some View {
         NavigationStack {
-            Form {
-                Section("Category") {
-                    Picker("Category", selection: $viewModel.newPostCategory) {
-                        ForEach(ThreadCategory.allCases, id: \.self) { category in
-                            Text(category.displayName).tag(category)
+            ZStack {
+                Color.investBackground.ignoresSafeArea()
+
+                ScrollView {
+                    VStack(spacing: 16) {
+                        categoryCard
+                        titleCard
+                        questionCard
+
+                        if let error = viewModel.postErrorMessage {
+                            errorCard(message: error)
                         }
                     }
-                    .pickerStyle(.segmented)
-                }
-
-                Section("Title") {
-                    TextField("e.g. How do I start investing?", text: $viewModel.newPostTitle)
-                }
-
-                Section("Question") {
-                    TextEditor(text: $viewModel.newPostBody)
-                        .frame(minHeight: 140)
-                }
-
-                if let error = viewModel.postErrorMessage {
-                    Section {
-                        Text(error)
-                            .font(.footnote)
-                            .foregroundStyle(.red)
-                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 20)
                 }
             }
             .navigationTitle("Ask a Question")
@@ -287,6 +282,83 @@ private struct ComposePostSheet: View {
             }
         }
         .tint(Color.investPrimary)
+    }
+
+    // MARK: - Section cards
+
+    private var categoryCard: some View {
+        sectionCard(title: "Category") {
+            Picker("Category", selection: $viewModel.newPostCategory) {
+                ForEach(ThreadCategory.allCases, id: \.self) { category in
+                    Text(category.displayName).tag(category)
+                }
+            }
+            .pickerStyle(.segmented)
+        }
+    }
+
+    private var titleCard: some View {
+        sectionCard(title: "Title") {
+            TextField("e.g. How do I start investing?", text: $viewModel.newPostTitle)
+                .textFieldStyle(InvestTextFieldStyle())
+        }
+    }
+
+    private var questionCard: some View {
+        sectionCard(title: "Question") {
+            TextEditor(text: $viewModel.newPostBody)
+                .frame(minHeight: 140)
+                .scrollContentBackground(.hidden)
+                .padding(10)
+                .background(
+                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        .fill(Color.investBackground)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                .stroke(Color.investBorder, lineWidth: 1)
+                        )
+                )
+                .foregroundStyle(Color.investTextPrimary)
+        }
+    }
+
+    private func errorCard(message: String) -> some View {
+        Text(message)
+            .font(.footnote)
+            .foregroundStyle(.red)
+            .padding(14)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .fill(Color.investSurface)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            .stroke(Color.red.opacity(0.4), lineWidth: 1)
+                    )
+            )
+    }
+
+    private func sectionCard<Content: View>(
+        title: String,
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text(title.uppercased())
+                .font(.caption.weight(.bold))
+                .foregroundStyle(Color.investAccent)
+                .tracking(0.5)
+            content()
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(Color.investSurface)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .stroke(Color.investBorder.opacity(0.6), lineWidth: 1)
+                )
+        )
     }
 }
 
