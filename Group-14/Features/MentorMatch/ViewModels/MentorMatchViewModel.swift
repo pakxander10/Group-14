@@ -313,12 +313,12 @@ final class CareerMatchViewModel: ObservableObject {
 
         // Target industry → expertise/track match (+3)
         let industryKeywords: [String: String] = [
-            "investment_banking": "investment",
+            "investment_banking": "investment banking",
             "wealth_management":  "financial planning",
             "fintech":            "fintech",
             "software_eng":       "ios",
-            "data_science":       "analytics",
-            "corporate_finance":  "finance"
+            "data_science":       "data science",
+            "corporate_finance":  "corporate finance"
         ]
         if let kw = industryKeywords[selectedTargetIndustry], expertise.contains(where: { $0.contains(kw) }) {
             score += 3
@@ -351,8 +351,8 @@ final class CareerMatchViewModel: ObservableObject {
 
         // Mentor career path → bio keyword match (+2)
         let pathKeywords: [String: String] = [
-            "traditional":       "traditional",
-            "non_traditional":   "without a traditional",
+            "traditional":       "took the traditional path",
+            "non_traditional":   "non-traditional path",
             "underrepresented":  "underrepresented",
             "hiring_experience": "hired"
         ]
