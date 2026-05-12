@@ -148,6 +148,7 @@ struct ThreadDetailView: View {
 
             TextEditor(text: $replyDraft)
                 .frame(minHeight: 100)
+                .foregroundStyle(Color.investTextPrimary)
                 .scrollContentBackground(.hidden)
                 .padding(10)
                 .background(

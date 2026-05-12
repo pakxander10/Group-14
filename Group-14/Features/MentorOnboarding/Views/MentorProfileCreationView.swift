@@ -154,7 +154,7 @@ struct MentorProfileCreationView: View {
                 .padding(8)
                 .background(Color.ascendSurface)
                 .clipShape(RoundedRectangle(cornerRadius: 8))
-                .foregroundColor(.white)
+                .foregroundColor(.ascendTextPrimary)
         }
     }
 
@@ -185,7 +185,7 @@ struct MentorProfileCreationView: View {
                 .padding(8)
                 .background(Color.ascendSurface)
                 .clipShape(RoundedRectangle(cornerRadius: 8))
-                .foregroundColor(.white)
+                .foregroundColor(.ascendTextPrimary)
         }
     }
 

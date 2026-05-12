@@ -81,7 +81,10 @@ struct LoginView: View {
             TextField("e.g. u1 or m1", text: $viewModel.enteredId)
                 .textInputAutocapitalization(.never)
                 .autocorrectionDisabled()
-                .textFieldStyle(.roundedBorder)
+                .foregroundColor(.ascendTextPrimary)
+                .padding(12)
+                .background(Color.ascendSurface)
+                .clipShape(RoundedRectangle(cornerRadius: 10))
         }
     }
 
