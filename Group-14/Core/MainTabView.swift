@@ -2,12 +2,16 @@
 //  MainTabView.swift
 //  Group-14
 //
-//  Root 4-tab container for the Ascend app.
+//  Root tab container. Tab set is role-aware:
+//    learner → Profile, Confidence, Match, Q Thread
+//    mentor  → Profile, Q Thread
 //
 
 import SwiftUI
 
 struct MainTabView: View {
+    @AppStorage("userRole") private var userRole: String = ""
+
     var body: some View {
         TabView {
             ProfileView()
@@ -15,15 +19,17 @@ struct MainTabView: View {
                     Label("Profile", systemImage: "person.crop.circle.fill")
                 }
 
-            ConfidenceDashboardView()
-                .tabItem {
-                    Label("Confidence", systemImage: "chart.bar.fill")
-                }
+            if userRole == UserRole.learner.storageValue {
+                ConfidenceDashboardView()
+                    .tabItem {
+                        Label("Confidence", systemImage: "chart.bar.fill")
+                    }
 
-            QuestionnaireView()
-                .tabItem {
-                    Label("Match", systemImage: "sparkles")
-                }
+                QuestionnaireView()
+                    .tabItem {
+                        Label("Match", systemImage: "sparkles")
+                    }
+            }
 
             MentorThreadView()
                 .tabItem {

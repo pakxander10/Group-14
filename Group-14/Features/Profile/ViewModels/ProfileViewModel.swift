@@ -44,6 +44,7 @@ final class ProfileService: ProfileServiceProtocol {
 final class ProfileViewModel: ObservableObject {
     // MARK: State
     @Published private(set) var learner: LearnerProfile?
+    @Published private(set) var mentor: MentorProfile?
     @Published private(set) var isLoading = false
     @Published private(set) var errorMessage: String?
 
@@ -56,7 +57,7 @@ final class ProfileViewModel: ObservableObject {
 
     // MARK: Intents
 
-    func loadProfile(userId: String = "u1") {
+    func loadLearner(userId: String) {
         isLoading = true
         errorMessage = nil
 
@@ -64,6 +65,20 @@ final class ProfileViewModel: ObservableObject {
             defer { isLoading = false }
             do {
                 learner = try await service.fetchLearner(id: userId)
+            } catch {
+                errorMessage = error.localizedDescription
+            }
+        }
+    }
+
+    func loadMentor(userId: String) {
+        isLoading = true
+        errorMessage = nil
+
+        Task {
+            defer { isLoading = false }
+            do {
+                mentor = try await service.fetchMentor(id: userId)
             } catch {
                 errorMessage = error.localizedDescription
             }

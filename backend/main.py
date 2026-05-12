@@ -74,6 +74,21 @@ class MentorProfile(BaseModel):
     profile_picture: Optional[bytes] = None
 
 
+class CreateMentorRequest(BaseModel):
+    name: str
+    title: str
+    company: str = "Fidelity Investments"
+    track: str               # "Financial" | "Tech"
+    bio: str
+    expertise: list[str]
+    years_experience: int
+    avatar_initials: str
+    email: Optional[str] = None
+    linked_in_url: Optional[str] = None
+    education_history: Optional[list[str]] = None
+    profile_picture: Optional[bytes] = None
+
+
 class ThreadReply(BaseModel):
     id: str
     author_name: str
@@ -262,6 +277,30 @@ def get_profile(user_id: str):
     if not learner:
         raise HTTPException(status_code=404, detail=f"User '{user_id}' not found.")
     return learner
+
+
+# ── POST /mentors ─────────────────────────────────────────────
+@app.post("/mentors", response_model=MentorProfile, status_code=201)
+def create_mentor(body: CreateMentorRequest):
+    """Creates a new mentor from onboarding-form data. ID is server-generated."""
+    new_id = f"m{uuid.uuid4().hex[:6]}"
+    mentor = MentorProfile(
+        id=new_id,
+        name=body.name,
+        title=body.title,
+        company=body.company,
+        track=body.track,
+        bio=body.bio,
+        expertise=body.expertise,
+        years_experience=body.years_experience,
+        avatar_initials=body.avatar_initials,
+        email=body.email,
+        linked_in_url=body.linked_in_url,
+        education_history=body.education_history,
+        profile_picture=body.profile_picture,
+    )
+    MOCK_MENTORS[new_id] = mentor
+    return mentor
 
 
 # ── POST /learners ────────────────────────────────────────────

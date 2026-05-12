@@ -36,7 +36,7 @@ struct LearnerProfile: Codable, Identifiable, Equatable {
 
 // MARK: - MentorProfile
 
-struct MentorProfile: Codable, Identifiable {
+struct MentorProfile: Codable, Identifiable, Equatable {
     var id: String
     var name: String
     var title: String
