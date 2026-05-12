@@ -3,7 +3,7 @@
 > High-level roadmap for the Group-14 iOS app. Each entry links to a detailed feature plan.
 
 **Last updated:** 2026-05-11
-**Active feature:** `feature_thread_inbox.md`
+**Active feature:** `feature_finance_readiness_ladder.md`
 
 ---
 
@@ -44,13 +44,14 @@ Backend is a small FastAPI service with in-memory mock data ([backend/main.py](.
 | Mentor Q Thread (read-only feed) | — | ✅ Done — replaces hardcoded MentorProfile |
 | Learner Profile Creation (onboarding) | [feature_learner_profile_creation.md](feature_learner_profile_creation.md) | ✅ Done |
 | Welcome / Login / Mentor signup | — | ✅ Done (PR #4) |
-| **Q Thread posting + replies + Inbox + score trigger** | [feature_thread_inbox.md](feature_thread_inbox.md) | 🟡 **Active** |
+| Q Thread posting + replies + Inbox + score trigger | [feature_thread_inbox.md](feature_thread_inbox.md) | ✅ Done (PR #5) |
+| **Finance-Exclusive Readiness Ladder** | [feature_finance_readiness_ladder.md](feature_finance_readiness_ladder.md) | 🟡 **Active** |
 
 ---
 
 ## Known Gaps
 
-- **No XCTest target wired in Xcode project yet.** `Group-14Tests/` source exists on disk but isn't a real target — tests must be added as a Unit Testing Bundle via Xcode UI before they can be run by `xcodebuild test`.
+- _(none currently — the XCTest target was wired up on `feature/finance-readiness-ladder`; all 15 acceptance tests now run via `xcodebuild test`.)_
 
 ---
 
