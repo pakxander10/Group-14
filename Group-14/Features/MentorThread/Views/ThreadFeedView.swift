@@ -288,24 +288,49 @@ private struct ComposePostSheet: View {
 
     private var categoryCard: some View {
         sectionCard(title: "Category") {
-            Picker("Category", selection: $viewModel.newPostCategory) {
+            // Custom 2-button picker: the system `.segmented` style renders
+            // both options the same near-gray on a white card, which makes
+            // the selection invisible. Branded pills make it obvious.
+            HStack(spacing: 8) {
                 ForEach(ThreadCategory.allCases, id: \.self) { category in
-                    Text(category.displayName).tag(category)
+                    categoryPill(for: category)
                 }
             }
-            .pickerStyle(.segmented)
         }
     }
 
+    private func categoryPill(for category: ThreadCategory) -> some View {
+        let isSelected = viewModel.newPostCategory == category
+        return Button {
+            viewModel.newPostCategory = category
+        } label: {
+            Text(category.displayName)
+                .font(.subheadline.weight(.semibold))
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 10)
+                .background(
+                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        .fill(isSelected ? Color.investPrimary : Color.investHeroBand)
+                )
+                .foregroundStyle(isSelected ? Color.white : Color.investPrimary)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        .stroke(isSelected ? Color.clear : Color.investBorder, lineWidth: 1)
+                )
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
+    }
+
     private var titleCard: some View {
-        sectionCard(title: "Title") {
+        sectionCard(title: "Question") {
             TextField("e.g. How do I start investing?", text: $viewModel.newPostTitle)
                 .textFieldStyle(InvestTextFieldStyle())
         }
     }
 
     private var questionCard: some View {
-        sectionCard(title: "Question") {
+        sectionCard(title: "Background") {
             TextEditor(text: $viewModel.newPostBody)
                 .frame(minHeight: 140)
                 .scrollContentBackground(.hidden)
