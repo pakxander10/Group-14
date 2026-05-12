@@ -32,35 +32,39 @@ final class MentorMatchAcceptanceTests: XCTestCase {
     }
 
     @MainActor
-    func test_givenFinancialWizardOnIntentStep_whenUserPicksAnIntent_thenTheyCanAdvanceAndMoveNext() async {
+    func test_givenFinancialWizardOnSituationStep_whenUserPicksASituation_thenTheyCanAdvanceAndMoveNext() async {
         // Given a fresh financial-match wizard
         let vm = FinancialMatchViewModel()
 
-        // When the user selects an intent
-        vm.selectedIntent = "first_job"
+        // When the user selects a situation on screen 1
+        vm.selectedSituation = "first_full_time"
 
         // Then advancing is unlocked and nextStep moves to step 1.
-        XCTAssertTrue(vm.canAdvance, "Selecting an intent unlocks advancing.")
+        XCTAssertTrue(vm.canAdvance, "Selecting a situation unlocks advancing.")
         vm.nextStep()
         XCTAssertEqual(vm.currentStep, 1, "nextStep advances to the next step.")
     }
 
     @MainActor
-    func test_givenFinancialWizard_whenUserTogglesThreeMentorPreferences_thenOnlyTwoAreKept() async {
-        // Given a fresh financial-match wizard
+    func test_givenFinancialWizardOnAccountsStep_whenUserTogglesAccounts_thenSelectionIsTracked() async {
+        // Given a financial-match wizard on the accounts step (step 2)
         let vm = FinancialMatchViewModel()
+        vm.currentStep = 2
 
-        // When the user tries to pick three mentor preferences
-        vm.toggleMentorPreference("first_gen")
-        vm.toggleMentorPreference("aspirational")
-        vm.toggleMentorPreference("practical")
+        // When the user toggles two accounts
+        vm.toggleAccount("checking")
+        vm.toggleAccount("savings")
 
-        // Then only the first two are retained — the cap is enforced.
-        XCTAssertEqual(
-            vm.selectedMentorPreferences,
-            ["first_gen", "aspirational"],
-            "Mentor preferences cap at two selections per the prompt."
-        )
+        // Then both are selected and canAdvance is true.
+        XCTAssertTrue(vm.selectedAccounts.contains("checking"))
+        XCTAssertTrue(vm.selectedAccounts.contains("savings"))
+        XCTAssertTrue(vm.canAdvance, "At least one account selected allows advancing.")
+
+        // When the user toggles checking off
+        vm.toggleAccount("checking")
+
+        // Then it is removed.
+        XCTAssertFalse(vm.selectedAccounts.contains("checking"))
     }
 
     @MainActor

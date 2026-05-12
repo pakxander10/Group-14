@@ -11,65 +11,60 @@ internal import Combine
 @MainActor
 final class FinancialMatchViewModel: ObservableObject {
 
-    // Step 0 — Intent
-    @Published var selectedIntent: String = ""
+    // Screen 1 — Where You're Starting From
+    @Published var selectedSituation: String = ""
 
-    // Step 1 — Who You Are
-    @Published var selectedGender: String = ""
-    @Published var selectedYear: String = ""
-    @Published var selectedMajor: String = ""
-    @Published var selectedSchoolType: String = ""
+    // Screen 2 — Biggest Financial Gap
+    @Published var selectedFinancialGap: String = ""
 
-    // Step 2 — First-Gen Status
+    // Screen 3 — Accounts (multi-select)
+    @Published var selectedAccounts: Set<String> = []
+
+    // Screen 4 — Most Urgent Priority
+    @Published var selectedUrgentPriority: String = ""
+
+    // Screen 5 — First-Gen Status
     @Published var selectedFirstGen: String = ""
 
-    // Step 3 — Financial Standing
-    @Published var selectedFinancialStanding: String = ""
+    // Screen 6 — Preferred Mentor Background
+    @Published var selectedMentorBackground: String = ""
 
-    // Step 4 — Confidence
+    // Screen 7 — Mentor Experience Preference
+    @Published var selectedExperiencePreference: String = ""
+
+    // Screen 8 — Communication Style
+    @Published var selectedCommunicationStyle: String = ""
+
+    // Screen 9 — Confidence Baseline (seeds confidence score)
     @Published var selectedConfidence: Int = 3
-
-    // Step 5 — Financial Accounts + Concern
-    @Published var selectedFinancialAccounts: Set<String> = []
-    @Published var selectedFinancialConcern: String = ""
-
-    // Step 6 — Mentor Preferences
-    @Published var selectedMentorPreferences: Set<String> = []
-    @Published var selectedSupportStyle: String = ""
 
     @Published var currentStep: Int = 0
     @Published private(set) var matchedMentor: MentorProfile?
     @Published private(set) var isLoading = false
     @Published private(set) var isComplete = false
 
-    let totalSteps = 7
+    let totalSteps = 9
 
     var canAdvance: Bool {
         switch currentStep {
-        case 0: return !selectedIntent.isEmpty
-        case 1: return !selectedGender.isEmpty && !selectedYear.isEmpty && !selectedSchoolType.isEmpty
-        case 2: return !selectedFirstGen.isEmpty
-        case 3: return !selectedFinancialStanding.isEmpty
-        case 4: return true
-        case 5: return !selectedFinancialConcern.isEmpty
-        case 6: return !selectedMentorPreferences.isEmpty && !selectedSupportStyle.isEmpty
+        case 0: return !selectedSituation.isEmpty
+        case 1: return !selectedFinancialGap.isEmpty
+        case 2: return !selectedAccounts.isEmpty
+        case 3: return !selectedUrgentPriority.isEmpty
+        case 4: return !selectedFirstGen.isEmpty
+        case 5: return !selectedMentorBackground.isEmpty
+        case 6: return !selectedExperiencePreference.isEmpty
+        case 7: return !selectedCommunicationStyle.isEmpty
+        case 8: return true
         default: return true
         }
     }
 
-    func toggleFinancialAccount(_ value: String) {
-        if selectedFinancialAccounts.contains(value) {
-            selectedFinancialAccounts.remove(value)
+    func toggleAccount(_ value: String) {
+        if selectedAccounts.contains(value) {
+            selectedAccounts.remove(value)
         } else {
-            selectedFinancialAccounts.insert(value)
-        }
-    }
-
-    func toggleMentorPreference(_ value: String) {
-        if selectedMentorPreferences.contains(value) {
-            selectedMentorPreferences.remove(value)
-        } else if selectedMentorPreferences.count < 2 {
-            selectedMentorPreferences.insert(value)
+            selectedAccounts.insert(value)
         }
     }
 
@@ -92,18 +87,15 @@ final class FinancialMatchViewModel: ObservableObject {
     }
 
     func reset() {
-        selectedIntent = ""
-        selectedGender = ""
-        selectedYear = ""
-        selectedMajor = ""
-        selectedSchoolType = ""
+        selectedSituation = ""
+        selectedFinancialGap = ""
+        selectedAccounts = []
+        selectedUrgentPriority = ""
         selectedFirstGen = ""
-        selectedFinancialStanding = ""
+        selectedMentorBackground = ""
+        selectedExperiencePreference = ""
+        selectedCommunicationStyle = ""
         selectedConfidence = 3
-        selectedFinancialAccounts = []
-        selectedFinancialConcern = ""
-        selectedMentorPreferences = []
-        selectedSupportStyle = ""
         currentStep = 0
         matchedMentor = nil
         isLoading = false
