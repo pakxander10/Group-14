@@ -92,7 +92,21 @@ final class MentorMatchAcceptanceTests: XCTestCase {
 
         // Then the user is on the first step and cannot move forward.
         XCTAssertEqual(vm.currentStep, 0, "New wizard always starts at step 0.")
-        XCTAssertFalse(vm.canAdvance, "Step 0 requires an intent before advancing.")
+        XCTAssertFalse(vm.canAdvance, "Step 0 requires a career stage selection before advancing.")
+    }
+
+    @MainActor
+    func test_givenCareerWizardOnCareerStageStep_whenUserPicksAStage_thenTheyCanAdvanceAndMoveNext() async {
+        // Given a fresh career-match wizard
+        let vm = CareerMatchViewModel()
+
+        // When the user selects a career stage
+        vm.selectedCareerStage = "first_role_growing"
+
+        // Then advancing is unlocked and nextStep moves to step 1.
+        XCTAssertTrue(vm.canAdvance, "Selecting a career stage unlocks advancing.")
+        vm.nextStep()
+        XCTAssertEqual(vm.currentStep, 1, "nextStep advances to the next step.")
     }
 
     @MainActor
