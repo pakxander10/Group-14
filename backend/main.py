@@ -35,6 +35,11 @@ class LearnerProfile(BaseModel):
     goal: str                # e.g. "investing", "career", "budgeting"
     confidence_score: int = 100
 
+    # True once the learner has been awarded the one-time questionnaire bonus.
+    # Financial-track learners earn +30 the first time they submit; Tech learners
+    # never trigger the bump but still flip the flag for symmetry.
+    questionnaire_completed: bool = False
+
     # Optional onboarding fields (collected on first launch)
     profile_picture: Optional[bytes] = None
     type_of_school: Optional[str] = None
@@ -143,11 +148,21 @@ class CreateReplyRequest(BaseModel):
     body: str
 
 
+class UpvoteRequest(BaseModel):
+    post_id: str
+    reply_id: str
+    voter_id: str
+
+
 class QuestionnaireRequest(BaseModel):
     age: int
     background: str          # "first_gen" | "general"
     interest: str            # "financial" | "tech"
     goal: str                # "investing" | "budgeting" | "career" | "coding" | "interview_prep"
+    # Optional submitting-learner id. When provided, a one-time +30 confidence
+    # bump is applied to the learner (Financial track only). Kept optional so
+    # legacy onboarding flows that don't yet pass it still work.
+    learner_id: Optional[str] = None
 
 
 class ConfidenceUpdateRequest(BaseModel):
@@ -273,9 +288,24 @@ MOCK_NOTIFICATIONS: dict[str, list[Notification]] = {
     "u2": [],
 }
 
-# Confidence boost applied to a learner each time a mentor replies to one
-# of their posts. Clamp range matches PUT /confidence/{user_id}.
+# Confidence bonuses for the Finance-Exclusive Readiness Ladder.
+# All bonuses apply only when the actor is a Financial-track learner AND the
+# subject post (where applicable) is in the "Financial" category. Tech-track
+# learners earn nothing — actions still process, but score delta = 0.
 MENTOR_REPLY_CONFIDENCE_BOOST = 10
+FIRST_FINANCIAL_POST_BONUS = 25
+SUBSEQUENT_FINANCIAL_POST_BONUS = 5
+QUESTIONNAIRE_BONUS = 30
+UPVOTE_BONUS = 1
+
+
+def _bump_score(learner: LearnerProfile, delta: int) -> None:
+    """Apply a score delta clamped to 0–1000 in place."""
+    learner.confidence_score = max(0, min(1000, learner.confidence_score + delta))
+
+
+def _is_financial_learner(learner: LearnerProfile) -> bool:
+    return learner.interest.lower() == "financial"
 
 
 # ══════════════════════════════════════════════════════════════
@@ -329,6 +359,26 @@ def create_post(body: CreatePostRequest):
         replies=[],
     )
     MOCK_THREAD_POSTS[new_id] = post
+
+    # Finance Readiness Ladder: only Financial learners posting in the
+    # Financial category earn points. First Financial post: +25, every
+    # subsequent Financial post: +5. Tech-track learners (and Financial
+    # learners posting in Tech) earn 0.
+    if _is_financial_learner(learner) and body.category == "Financial":
+        prior_financial_posts = sum(
+            1
+            for p in MOCK_THREAD_POSTS.values()
+            if p.id != new_id
+            and p.author_id == learner.id
+            and p.category == "Financial"
+        )
+        bonus = (
+            FIRST_FINANCIAL_POST_BONUS
+            if prior_financial_posts == 0
+            else SUBSEQUENT_FINANCIAL_POST_BONUS
+        )
+        _bump_score(learner, bonus)
+
     return post
 
 
@@ -367,7 +417,8 @@ def create_reply(body: CreateReplyRequest):
     if post.author_role == "learner":
         learner = MOCK_LEARNERS.get(post.author_id)
         if learner is not None:
-            # 1. Notification
+            # 1. Notification — fires regardless of track, since the learner
+            #    still wants to know a mentor responded to their question.
             notif = Notification(
                 id=f"n{uuid.uuid4().hex[:6]}",
                 learner_id=learner.id,
@@ -379,10 +430,38 @@ def create_reply(body: CreateReplyRequest):
                 created_at=datetime.now(timezone.utc).isoformat(),
             )
             MOCK_NOTIFICATIONS.setdefault(learner.id, []).append(notif)
-            # 2. Confidence bump (clamped 1..1000, same as PUT /confidence)
-            learner.confidence_score = max(
-                1, min(1000, learner.confidence_score + MENTOR_REPLY_CONFIDENCE_BOOST)
-            )
+            # 2. Confidence bump — gated to the Finance Readiness Ladder.
+            #    Only Financial-track learners receiving a reply on a
+            #    Financial-category post earn the +10 boost.
+            if post.category == "Financial" and _is_financial_learner(learner):
+                _bump_score(learner, MENTOR_REPLY_CONFIDENCE_BOOST)
+
+    return reply
+
+
+# ── POST /upvote ──────────────────────────────────────────────
+@app.post("/upvote", response_model=ThreadReply)
+def upvote_reply(body: UpvoteRequest):
+    """Increment a reply's upvote count. If the voter is a Financial-track
+    learner AND the parent post is in the Financial category, the voter earns
+    +1 confidence (clamped 0–1000). All other combinations: upvote registers
+    but no score moves."""
+    post = MOCK_THREAD_POSTS.get(body.post_id)
+    if not post:
+        raise HTTPException(status_code=404, detail=f"Post '{body.post_id}' not found.")
+
+    reply = next((r for r in post.replies if r.id == body.reply_id), None)
+    if reply is None:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Reply '{body.reply_id}' not found on post '{body.post_id}'.",
+        )
+
+    reply.upvotes += 1
+
+    voter = MOCK_LEARNERS.get(body.voter_id)
+    if voter is not None and _is_financial_learner(voter) and post.category == "Financial":
+        _bump_score(voter, UPVOTE_BONUS)
 
     return reply
 
@@ -401,10 +480,22 @@ def get_inbox(learner_id: str):
 @app.post("/questionnaire", response_model=MentorProfile)
 def submit_questionnaire(answers: QuestionnaireRequest):
     """
-    Simple matching logic:
+    Matching logic:
     - interest == "tech"       → Jordan Lee (Tech track)
     - interest == "financial"  → Priya Sharma if goal is investing, else Amara Okafor
+
+    Side-effect (Finance Readiness Ladder): when `learner_id` is provided and
+    the learner is on the Financial track, the FIRST submission grants +30
+    confidence and flips `questionnaire_completed`. Subsequent submissions and
+    Tech-track submissions do not move the score.
     """
+    if answers.learner_id:
+        learner = MOCK_LEARNERS.get(answers.learner_id)
+        if learner is not None and not learner.questionnaire_completed:
+            if _is_financial_learner(learner):
+                _bump_score(learner, QUESTIONNAIRE_BONUS)
+            learner.questionnaire_completed = True
+
     if answers.interest == "tech":
         return MOCK_MENTORS["m2"]
 
@@ -419,13 +510,12 @@ def submit_questionnaire(answers: QuestionnaireRequest):
 # ── PUT /confidence/{user_id} ─────────────────────────────────
 @app.put("/confidence/{user_id}", response_model=LearnerProfile)
 def update_confidence(user_id: str, body: ConfidenceUpdateRequest):
-    """Applies a delta to the user's confidence score (clamps 1–1000)."""
+    """Applies a delta to the user's confidence score (clamps 0–1000)."""
     learner = MOCK_LEARNERS.get(user_id)
     if not learner:
         raise HTTPException(status_code=404, detail=f"User '{user_id}' not found.")
 
-    new_score = max(1, min(1000, learner.confidence_score + body.delta))
-    learner.confidence_score = new_score
+    _bump_score(learner, body.delta)
     MOCK_LEARNERS[user_id] = learner
     return learner
 
@@ -482,7 +572,7 @@ def create_learner(body: CreateLearnerRequest):
         background=body.background,
         interest=body.interest,
         goal=body.goal,
-        confidence_score=max(1, min(1000, body.current_confidence_score)),
+        confidence_score=max(0, min(1000, body.current_confidence_score)),
         profile_picture=body.profile_picture,
         type_of_school=body.type_of_school,
         graduation_year=body.graduation_year,
