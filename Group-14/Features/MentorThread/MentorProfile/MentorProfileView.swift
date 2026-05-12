@@ -11,7 +11,9 @@ import PhotosUI
 // MARK: - Main View
 
 struct MentorProfileView: View {
-    @State private var mentor = MentorProfile(
+    @State private var mentor: MentorProfile
+
+    init(mentor: MentorProfile = MentorProfile(
         id: "1",
         name: "Sarah Chen",
         title: "Senior Software Engineer",
@@ -25,7 +27,9 @@ struct MentorProfileView: View {
         linkedInUrl: "linkedin.com/in/sarahchen",
         educationHistory: ["BS Computer Science, UNC"],
         profilePicture: nil
-    )
+    )) {
+        self._mentor = State(initialValue: mentor)
+    }
 
     @State private var selectedPhoto: PhotosPickerItem?
     @State private var profileImage: Image?

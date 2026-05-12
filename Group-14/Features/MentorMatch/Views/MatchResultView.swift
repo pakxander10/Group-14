@@ -25,77 +25,86 @@ struct MatchResultView: View {
                 }
                 .padding(.top, 32)
 
-                VStack(spacing: 20) {
-                    VStack(spacing: 12) {
-                        ZStack {
-                            Circle()
-                                .fill(LinearGradient(
-                                    colors: mentor.track == "Tech" ? [.trackTech, .ascendAccent] : [.trackFinancial, .ascendPrimary],
-                                    startPoint: .topLeading, endPoint: .bottomTrailing))
-                                .frame(width: 88, height: 88)
-                            Text(mentor.avatarInitials)
-                                .font(.system(size: 28, weight: .bold))
-                                .foregroundColor(.white)
-                        }
-                        .shadow(color: .ascendPrimary.opacity(0.4), radius: 12)
+                NavigationLink(destination: MentorProfileView(mentor: mentor)) {
+                    VStack(spacing: 20) {
+                        VStack(spacing: 12) {
+                            ZStack {
+                                Circle()
+                                    .fill(LinearGradient(
+                                        colors: mentor.track == "Tech" ? [.trackTech, .ascendAccent] : [.trackFinancial, .ascendPrimary],
+                                        startPoint: .topLeading, endPoint: .bottomTrailing))
+                                    .frame(width: 88, height: 88)
+                                Text(mentor.avatarInitials)
+                                    .font(.system(size: 28, weight: .bold))
+                                    .foregroundColor(.white)
+                            }
+                            .shadow(color: .ascendPrimary.opacity(0.4), radius: 12)
 
-                        VStack(spacing: 4) {
-                            Text(mentor.name)
-                                .font(.title2.bold())
-                                .foregroundColor(.ascendTextPrimary)
-                            Text(mentor.title)
-                                .font(.subheadline)
+                            VStack(spacing: 4) {
+                                Text(mentor.name)
+                                    .font(.title2.bold())
+                                    .foregroundColor(.ascendTextPrimary)
+                                Text(mentor.title)
+                                    .font(.subheadline)
+                                    .foregroundColor(.ascendTextSecondary)
+                                Text(mentor.company)
+                                    .font(.caption.bold())
+                                    .foregroundColor(.ascendAccent)
+                            }
+
+                            Label(mentor.track + " Track",
+                                  systemImage: mentor.track == "Tech" ? "laptopcomputer" : "dollarsign.circle")
+                                .font(.caption.bold())
+                                .padding(.horizontal, 12).padding(.vertical, 5)
+                                .background(mentor.track == "Tech" ? Color.trackTech.opacity(0.2) : Color.trackFinancial.opacity(0.2))
+                                .foregroundColor(mentor.track == "Tech" ? .trackTech : .trackFinancial)
+                                .clipShape(Capsule())
+                        }
+
+                        Divider().background(Color.ascendSurface)
+
+                        Text(mentor.bio)
+                            .font(.body)
+                            .foregroundColor(.ascendTextSecondary)
+                            .multilineTextAlignment(.leading)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Expertise")
+                                .font(.caption.bold())
                                 .foregroundColor(.ascendTextSecondary)
-                            Text(mentor.company)
+                            MatchFlowLayout(spacing: 8) {
+                                ForEach(mentor.expertise, id: \.self) { tag in
+                                    Text(tag)
+                                        .font(.caption.bold())
+                                        .padding(.horizontal, 10).padding(.vertical, 5)
+                                        .background(Color.ascendPrimary.opacity(0.2))
+                                        .foregroundColor(.ascendAccent)
+                                        .clipShape(Capsule())
+                                }
+                            }
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+
+                        HStack {
+                            Text("\(mentor.yearsExperience) years at \(mentor.company)")
+                                .font(.caption)
+                                .foregroundColor(.ascendTextSecondary)
+                            Spacer()
+                            Text("View full profile →")
                                 .font(.caption.bold())
                                 .foregroundColor(.ascendAccent)
                         }
-
-                        Label(mentor.track + " Track",
-                              systemImage: mentor.track == "Tech" ? "laptopcomputer" : "dollarsign.circle")
-                            .font(.caption.bold())
-                            .padding(.horizontal, 12).padding(.vertical, 5)
-                            .background(mentor.track == "Tech" ? Color.trackTech.opacity(0.2) : Color.trackFinancial.opacity(0.2))
-                            .foregroundColor(mentor.track == "Tech" ? .trackTech : .trackFinancial)
-                            .clipShape(Capsule())
                     }
-
-                    Divider().background(Color.ascendSurface)
-
-                    Text(mentor.bio)
-                        .font(.body)
-                        .foregroundColor(.ascendTextSecondary)
-                        .multilineTextAlignment(.leading)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Expertise")
-                            .font(.caption.bold())
-                            .foregroundColor(.ascendTextSecondary)
-                        MatchFlowLayout(spacing: 8) {
-                            ForEach(mentor.expertise, id: \.self) { tag in
-                                Text(tag)
-                                    .font(.caption.bold())
-                                    .padding(.horizontal, 10).padding(.vertical, 5)
-                                    .background(Color.ascendPrimary.opacity(0.2))
-                                    .foregroundColor(.ascendAccent)
-                                    .clipShape(Capsule())
-                            }
-                        }
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-
-                    Text("\(mentor.yearsExperience) years at \(mentor.company)")
-                        .font(.caption)
-                        .foregroundColor(.ascendTextSecondary)
+                    .padding(24)
+                    .background(
+                        RoundedRectangle(cornerRadius: 24)
+                            .fill(Color.ascendSurface)
+                            .overlay(RoundedRectangle(cornerRadius: 24)
+                                .stroke(Color.ascendAccent.opacity(0.25), lineWidth: 1))
+                    )
                 }
-                .padding(24)
-                .background(
-                    RoundedRectangle(cornerRadius: 24)
-                        .fill(Color.ascendSurface)
-                        .overlay(RoundedRectangle(cornerRadius: 24)
-                            .stroke(Color.ascendAccent.opacity(0.25), lineWidth: 1))
-                )
+                .buttonStyle(.plain)
 
                 Button("Start Over") {
                     withAnimation { onReset() }
