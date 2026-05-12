@@ -2,9 +2,14 @@
 //  MockThreadService.swift
 //  Group-14Tests — Mocks
 //
-//  In-memory mock of ThreadServiceProtocol. Mirrors the backend's side-effects
-//  in `createReply` (append notification + bump learner confidence) so the
-//  acceptance tests don't need a running FastAPI server.
+//  In-memory mock of ThreadServiceProtocol. Mirrors the backend's
+//  Finance-exclusive scoring spec so acceptance tests don't need a
+//  running FastAPI server.
+//
+//    First Financial post  → +25 to learner
+//    Subsequent Finance    → +5
+//    Mentor reply (Finance only) → +10 to post author
+//    Anything on the Tech track  → 0 delta
 //
 
 import Foundation
@@ -17,24 +22,56 @@ final class MockThreadService: ThreadServiceProtocol {
     var notifications: [String: [InboxNotification]] = [:]
     var learnerScores: [String: Int] = [:]
     var learnerNames: [String: String] = [:]
+    var learnerInterests: [String: String] = [:]   // "financial" | "tech"
     var mentorNames: [String: String] = [:]
 
     var throwOnNext: Error?
 
+    // Scoring constants — mirror the backend's planned constants exactly.
     static let mentorReplyConfidenceBoost = 10
+    static let firstFinancePostBonus     = 25
+    static let subsequentFinancePostBonus = 5
 
     init() {}
 
     // MARK: - Seeding helpers
 
-    func seedLearner(id: String, name: String, score: Int) {
+    /// `interest` is required so tests are explicit about the track.
+    /// Values are normalized to lowercase to match `LearnerProfile.interest`.
+    func seedLearner(id: String, name: String, interest: String, score: Int) {
         learnerNames[id] = name
+        learnerInterests[id] = interest.lowercased()
         learnerScores[id] = score
         notifications[id] = notifications[id] ?? []
     }
 
     func seedMentor(id: String, name: String) {
         mentorNames[id] = name
+    }
+
+    /// Insert a fully-formed post without running the createPost scoring side-effects.
+    /// Useful for tests that want to isolate a downstream behavior (e.g. mentor reply).
+    @discardableResult
+    func seedPost(
+        id: String = "p_seed",
+        authorId: String,
+        category: String,
+        title: String = "Seed question",
+        body: String = "Seed body"
+    ) -> ThreadPost {
+        let post = ThreadPost(
+            id: id,
+            authorId: authorId,
+            authorName: learnerNames[authorId] ?? "Unknown",
+            authorRole: "learner",
+            category: category,
+            title: title,
+            body: body,
+            upvotes: 0,
+            replies: []
+        )
+        posts[id] = post
+        return post
     }
 
     // MARK: - ThreadServiceProtocol
@@ -59,6 +96,20 @@ final class MockThreadService: ThreadServiceProtocol {
             replies: []
         )
         posts[newId] = post
+
+        // Finance-exclusive scoring: both the author and the post must be Financial.
+        let interest = (learnerInterests[request.authorId] ?? "").lowercased()
+        if interest == "financial" && request.category.lowercased() == "financial" {
+            let priorPosts = posts.values.filter {
+                $0.authorId == request.authorId && $0.id != newId
+            }.count
+            let bonus = priorPosts == 0
+                ? Self.firstFinancePostBonus
+                : Self.subsequentFinancePostBonus
+            let current = learnerScores[request.authorId] ?? 0
+            learnerScores[request.authorId] = max(0, min(1000, current + bonus))
+        }
+
         return post
     }
 
@@ -98,7 +149,7 @@ final class MockThreadService: ThreadServiceProtocol {
         if post.authorRole == "learner" {
             let learnerId = post.authorId
 
-            // 1. Append notification
+            // 1. Notification always fires (Tech learners still want to see replies).
             let notif = InboxNotification(
                 id: "n_\((notifications[learnerId] ?? []).count + 1)",
                 learnerId: learnerId,
@@ -111,9 +162,11 @@ final class MockThreadService: ThreadServiceProtocol {
             )
             notifications[learnerId, default: []].append(notif)
 
-            // 2. Bump confidence score, clamped 1...1000.
-            let current = learnerScores[learnerId] ?? 0
-            learnerScores[learnerId] = max(1, min(1000, current + Self.mentorReplyConfidenceBoost))
+            // 2. Confidence bump is Finance-exclusive: gate on post.category.
+            if post.category.lowercased() == "financial" {
+                let current = learnerScores[learnerId] ?? 0
+                learnerScores[learnerId] = max(0, min(1000, current + Self.mentorReplyConfidenceBoost))
+            }
         }
 
         return reply

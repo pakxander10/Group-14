@@ -17,7 +17,7 @@ final class ThreadAcceptanceTests: XCTestCase {
     func test_givenLearnerPostedQuestion_whenMentorReplies_thenLearnerInboxReceivesNotification() async throws {
         // Given a learner posted a question
         let mock = MockThreadService()
-        mock.seedLearner(id: "u1", name: "Sofia Rodriguez", score: 100)
+        mock.seedLearner(id: "u1", name: "Sofia Rodriguez", interest: "financial", score: 100)
         mock.seedMentor(id: "m1", name: "Priya Sharma")
 
         let post = try await mock.createPost(
@@ -59,18 +59,20 @@ final class ThreadAcceptanceTests: XCTestCase {
 
     func test_givenLearnerScoreIs100_whenMentorRepliesToTheirPost_thenScoreIncrements() async throws {
         // Given a learner with score 100 and a posted question
+        //
+        // NOTE: We `seedPost` directly (rather than calling createPost) so this
+        // test isolates the mentor-reply +10 trigger from the first-Finance-post
+        // +25 bonus introduced by the Finance Readiness Ladder.
         let mock = MockThreadService()
-        mock.seedLearner(id: "u1", name: "Sofia Rodriguez", score: 100)
+        mock.seedLearner(id: "u1", name: "Sofia Rodriguez", interest: "financial", score: 100)
         mock.seedMentor(id: "m1", name: "Priya Sharma")
         XCTAssertEqual(mock.learnerScores["u1"], 100, "precondition")
 
-        let post = try await mock.createPost(
-            CreatePostRequest(
-                authorId: "u1",
-                category: ThreadCategory.financial.rawValue,
-                title: "Roth IRA question",
-                body: "Where should I begin?"
-            )
+        let post = mock.seedPost(
+            authorId: "u1",
+            category: ThreadCategory.financial.rawValue,
+            title: "Roth IRA question",
+            body: "Where should I begin?"
         )
 
         // When a mentor replies
